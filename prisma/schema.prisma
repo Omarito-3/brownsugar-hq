@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
+
+enum ProductCategory {
+  BUBBLE_TEA
+  COFFEE
+  FOOD
+  OTHER
+}
+
+enum ExpenseCategory {
+  RENT
+  SUPPLIES
+  SALARY
+  MARKETING
+  EQUIPMENT
+  OTHER
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  location  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users          User[]
+  branchProducts BranchProduct[]
+  salesEntries   SalesEntry[]
+  expenses       Expense[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  branchId     String?
+  createdAt    DateTime @default(now())
+
+  branch       Branch?      @relation(fields: [branchId], references: [id])
+  salesEntries SalesEntry[]
+  expenses     Expense[]
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  name          String
+  nameAr        String?
+  category      ProductCategory
+  basePriceIls  Decimal         @db.Decimal(10, 2)
+  costIls       Decimal?        @db.Decimal(10, 2)
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+
+  branchProducts  BranchProduct[]
+  salesLineItems  SalesLineItem[]
+}
+
+model BranchProduct {
+  id                String   @id @default(cuid())
+  branchId          String
+  productId         String
+  isAvailable       Boolean  @default(true)
+  priceOverrideIls  Decimal? @db.Decimal(10, 2)
+
+  branch  Branch  @relation(fields: [branchId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([branchId, productId])
+}
+
+model Currency {
+  code      String   @id
+  rateToIls Decimal  @db.Decimal(10, 4)
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+}
+
+model SalesEntry {
+  id           String   @id @default(cuid())
+  branchId     String
+  date         DateTime @db.Date
+  totalIls     Decimal  @db.Decimal(10, 2)
+  orderCount   Int
+  notes        String?
+  enteredById  String
+  createdAt    DateTime @default(now())
+
+  branch      Branch          @relation(fields: [branchId], references: [id])
+  enteredBy   User            @relation(fields: [enteredById], references: [id])
+  lineItems   SalesLineItem[]
+
+  @@unique([branchId, date])
+}
+
+model SalesLineItem {
+  id           String @id @default(cuid())
+  salesEntryId String
+  productId    String
+  quantity     Int
+
+  salesEntry SalesEntry @relation(fields: [salesEntryId], references: [id])
+  product    Product    @relation(fields: [productId], references: [id])
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  branchId        String
+  date            DateTime        @db.Date
+  amountOriginal  Decimal         @db.Decimal(10, 2)
+  currencyCode    String
+  amountIls       Decimal         @db.Decimal(10, 2)
+  category        ExpenseCategory
+  receiptUrl      String?
+  notes           String?
+  enteredById     String
+  createdAt       DateTime        @default(now())
+
+  branch    Branch   @relation(fields: [branchId], references: [id])
+  currency  Currency @relation(fields: [currencyCode], references: [code])
+  enteredBy User     @relation(fields: [enteredById], references: [id])
+}
