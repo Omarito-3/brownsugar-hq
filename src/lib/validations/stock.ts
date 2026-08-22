@@ -17,6 +17,8 @@ export const movementTypeValues = [
   "ADJUSTMENT",
 ] as const;
 
+export const adjustmentDirectionValues = ["INCREASE", "DECREASE"] as const;
+
 export const movementSchema = z
   .object({
     type: z.enum(movementTypeValues),
@@ -31,6 +33,7 @@ export const movementSchema = z
       .refine((value) => value <= todayDateKey(), "Date cannot be in the future"),
     supplierId: z.string().optional().or(z.literal("")),
     costIls: z.coerce.number().nonnegative("Must be zero or greater").optional(),
+    direction: z.enum(adjustmentDirectionValues).optional().or(z.literal("")),
     notes: z.string().max(1000).optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
@@ -50,6 +53,14 @@ export const movementSchema = z
       }
     } else if (!data.branchId) {
       ctx.addIssue({ code: "custom", path: ["branchId"], message: "Branch is required" });
+    }
+
+    if (data.type === "ADJUSTMENT" && !data.direction) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["direction"],
+        message: "Choose whether this increases or decreases stock",
+      });
     }
   });
 

@@ -86,6 +86,7 @@ export async function getRecentMovements(branchId?: string, limit = 15) {
     itemName: m.stockItem.name,
     unit: m.stockItem.unit as string,
     type: m.type as string,
+    direction: m.direction as string | null,
     quantity: toNumber(m.quantity),
     costIls: m.costIls != null ? toNumber(m.costIls) : null,
     supplierName: m.supplier?.name ?? null,

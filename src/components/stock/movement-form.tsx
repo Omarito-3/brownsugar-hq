@@ -10,13 +10,14 @@ import { toast } from "sonner";
 import {
   movementSchema,
   movementTypeValues,
+  adjustmentDirectionValues,
   type MovementInput,
   type MovementFormInput,
 } from "@/lib/validations/stock";
 import { recordMovement } from "@/lib/actions/stock";
 import { useSound } from "@/hooks/use-sound";
 import { todayDateKey, formatIls } from "@/lib/format";
-import { UNIT_LABELS, MOVEMENT_TYPE_LABELS } from "@/lib/stock-labels";
+import { UNIT_LABELS, MOVEMENT_TYPE_LABELS, ADJUSTMENT_DIRECTION_LABELS } from "@/lib/stock-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -72,6 +73,7 @@ export function MovementForm({
     date: todayDateKey(),
     supplierId: "",
     costIls: "",
+    direction: "",
     notes: "",
   };
 
@@ -85,6 +87,7 @@ export function MovementForm({
   const selectedItem = items.find((i) => i.id === stockItemId);
   const isTransfer = type === "TRANSFER";
   const isPurchase = type === "PURCHASE";
+  const isAdjustment = type === "ADJUSTMENT";
 
   function onSubmit(values: MovementInput) {
     startTransition(async () => {
@@ -290,6 +293,33 @@ export function MovementForm({
             )}
           />
         </div>
+
+        {isAdjustment && (
+          <FormField
+            control={form.control}
+            name="direction"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-base">Direction</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <FormControl>
+                    <SelectTrigger className="h-12 w-full text-base">
+                      <SelectValue placeholder="Increase or decrease?" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {adjustmentDirectionValues.map((d) => (
+                      <SelectItem key={d} value={d} className="text-base">
+                        {ADJUSTMENT_DIRECTION_LABELS[d]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {isPurchase && (
           <>

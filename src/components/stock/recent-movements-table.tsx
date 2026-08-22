@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { FadeIn } from "@/components/motion/fade-in";
 import { formatDate, formatIls } from "@/lib/format";
-import { UNIT_LABELS, MOVEMENT_TYPE_LABELS } from "@/lib/stock-labels";
+import { UNIT_LABELS, MOVEMENT_TYPE_LABELS, ADJUSTMENT_DIRECTION_LABELS } from "@/lib/stock-labels";
 import type { getRecentMovements } from "@/lib/queries/stock";
 
 type RecentMovements = Awaited<ReturnType<typeof getRecentMovements>>;
@@ -47,7 +47,10 @@ export function RecentMovementsTable({ movements }: { movements: RecentMovements
                       <TableCell className="font-medium">{m.branchName}</TableCell>
                       <TableCell>{m.itemName}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{MOVEMENT_TYPE_LABELS[m.type] ?? m.type}</Badge>
+                        <Badge variant="secondary">
+                          {MOVEMENT_TYPE_LABELS[m.type] ?? m.type}
+                          {m.direction ? ` (${ADJUSTMENT_DIRECTION_LABELS[m.direction] ?? m.direction})` : ""}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {m.quantity} {UNIT_LABELS[m.unit] ?? m.unit}

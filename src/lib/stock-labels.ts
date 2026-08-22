@@ -16,3 +16,8 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   TRANSFER_OUT: "Transfer Out",
   ADJUSTMENT: "Adjustment",
 };
+
+export const ADJUSTMENT_DIRECTION_LABELS: Record<string, string> = {
+  INCREASE: "Increase",
+  DECREASE: "Decrease",
+};

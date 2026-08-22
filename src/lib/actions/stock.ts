@@ -17,7 +17,9 @@ function toDate(dateKey: string): Date {
 
 class InsufficientStockError extends Error {}
 
-const ADDING_TYPES = new Set(["PURCHASE", "TRANSFER_IN", "ADJUSTMENT"]);
+// ADJUSTMENT's sign depends on its `direction` field instead of a fixed type,
+// so it's intentionally not listed here — see the isAdd logic below.
+const ADDING_TYPES = new Set(["PURCHASE", "TRANSFER_IN"]);
 
 type DbMovementType =
   | "PURCHASE"
@@ -26,6 +28,8 @@ type DbMovementType =
   | "TRANSFER_IN"
   | "TRANSFER_OUT"
   | "ADJUSTMENT";
+
+type AdjustmentDirection = "INCREASE" | "DECREASE";
 
 /**
  * Upserts the BranchStock row, applies the signed delta for this movement
@@ -39,6 +43,7 @@ async function applyMovementTx(
     branchId: string;
     stockItemId: string;
     type: DbMovementType;
+    direction?: AdjustmentDirection | null;
     quantity: number;
     date: Date;
     enteredById: string;
@@ -48,7 +53,8 @@ async function applyMovementTx(
     notes?: string | null;
   }
 ) {
-  const isAdd = ADDING_TYPES.has(params.type);
+  const isAdd =
+    params.type === "ADJUSTMENT" ? params.direction === "INCREASE" : ADDING_TYPES.has(params.type);
 
   const branchStock = await tx.branchStock.upsert({
     where: { branchId_stockItemId: { branchId: params.branchId, stockItemId: params.stockItemId } },
@@ -71,6 +77,7 @@ async function applyMovementTx(
       branchId: params.branchId,
       stockItemId: params.stockItemId,
       type: params.type,
+      direction: params.type === "ADJUSTMENT" ? params.direction : null,
       quantity: params.quantity,
       costIls: params.costIls ?? null,
       supplierId: params.supplierId ?? null,
@@ -167,6 +174,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
         branchId,
         stockItemId: data.stockItemId,
         type: movementType,
+        direction: movementType === "ADJUSTMENT" ? (data.direction || null) : null,
         quantity: data.quantity,
         date,
         enteredById: userId,

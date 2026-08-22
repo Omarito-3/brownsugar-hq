@@ -47,6 +47,11 @@ enum StockMovementType {
   ADJUSTMENT
 }
 
+enum AdjustmentDirection {
+  INCREASE
+  DECREASE
+}
+
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -210,18 +215,19 @@ model BranchStock {
 }
 
 model StockMovement {
-  id          String            @id @default(cuid())
+  id          String               @id @default(cuid())
   branchId    String
   stockItemId String
   type        StockMovementType
-  quantity    Decimal           @db.Decimal(10, 2)
-  costIls     Decimal?          @db.Decimal(10, 2)
+  direction   AdjustmentDirection?
+  quantity    Decimal              @db.Decimal(10, 2)
+  costIls     Decimal?             @db.Decimal(10, 2)
   supplierId  String?
-  expenseId   String?           @unique
+  expenseId   String?              @unique
   notes       String?
-  date        DateTime          @db.Date
+  date        DateTime             @db.Date
   enteredById String
-  createdAt   DateTime          @default(now())
+  createdAt   DateTime             @default(now())
 
   branch    Branch    @relation(fields: [branchId], references: [id])
   stockItem StockItem @relation(fields: [stockItemId], references: [id])
