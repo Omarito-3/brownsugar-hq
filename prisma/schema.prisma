@@ -29,6 +29,24 @@ enum ExpenseCategory {
   OTHER
 }
 
+enum Unit {
+  KG
+  G
+  L
+  ML
+  PIECE
+  PACK
+}
+
+enum StockMovementType {
+  PURCHASE
+  CONSUMPTION
+  WASTE
+  TRANSFER_IN
+  TRANSFER_OUT
+  ADJUSTMENT
+}
+
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -40,6 +58,8 @@ model Branch {
   branchProducts BranchProduct[]
   salesEntries   SalesEntry[]
   expenses       Expense[]
+  branchStock    BranchStock[]
+  stockMovements StockMovement[]
 }
 
 model User {
@@ -51,9 +71,10 @@ model User {
   branchId     String?
   createdAt    DateTime @default(now())
 
-  branch       Branch?      @relation(fields: [branchId], references: [id])
-  salesEntries SalesEntry[]
-  expenses     Expense[]
+  branch         Branch?         @relation(fields: [branchId], references: [id])
+  salesEntries   SalesEntry[]
+  expenses       Expense[]
+  stockMovements StockMovement[]
 }
 
 model Product {
@@ -146,7 +167,65 @@ model Expense {
   enteredById    String
   createdAt      DateTime        @default(now())
 
-  branch    Branch   @relation(fields: [branchId], references: [id])
-  currency  Currency @relation(fields: [currencyCode], references: [code])
-  enteredBy User     @relation(fields: [enteredById], references: [id])
+  branch        Branch         @relation(fields: [branchId], references: [id])
+  currency      Currency       @relation(fields: [currencyCode], references: [code])
+  enteredBy     User           @relation(fields: [enteredById], references: [id])
+  stockMovement StockMovement?
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  stockMovements StockMovement[]
+}
+
+model StockItem {
+  id                String   @id @default(cuid())
+  name              String
+  nameAr            String?
+  unit              Unit
+  lowStockThreshold Decimal  @db.Decimal(10, 2)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  branchStock    BranchStock[]
+  stockMovements StockMovement[]
+}
+
+model BranchStock {
+  id              String  @id @default(cuid())
+  branchId        String
+  stockItemId     String
+  currentQuantity Decimal @default(0) @db.Decimal(10, 2)
+
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+
+  @@unique([branchId, stockItemId])
+}
+
+model StockMovement {
+  id          String            @id @default(cuid())
+  branchId    String
+  stockItemId String
+  type        StockMovementType
+  quantity    Decimal           @db.Decimal(10, 2)
+  costIls     Decimal?          @db.Decimal(10, 2)
+  supplierId  String?
+  expenseId   String?           @unique
+  notes       String?
+  date        DateTime          @db.Date
+  enteredById String
+  createdAt   DateTime          @default(now())
+
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+  supplier  Supplier? @relation(fields: [supplierId], references: [id])
+  enteredBy User      @relation(fields: [enteredById], references: [id])
+  expense   Expense?  @relation(fields: [expenseId], references: [id])
 }

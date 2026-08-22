@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
 import { MetricCard } from "@/components/shared/metric-card";
 import { BranchTodayCards } from "@/components/sales/branch-today-cards";
+import { LowStockAlerts } from "@/components/stock/low-stock-alerts";
 import { RevenueLineChart } from "@/components/charts/revenue-line-chart";
 import { formatIls } from "@/lib/format";
 import { getWeeklyMetrics, getDailyRevenueSeries, getTodayPerBranch } from "@/lib/queries/sales";
 import { getFinanceMetrics } from "@/lib/queries/finance";
+import { getLowStockAlerts } from "@/lib/queries/stock";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -18,12 +20,14 @@ export default async function DashboardPage() {
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [weeklyMetrics, financeMetrics, { series, branches }, todayPerBranch] = await Promise.all([
-    getWeeklyMetrics(scopedBranchId),
-    getFinanceMetrics(scopedBranchId),
-    getDailyRevenueSeries(scopedBranchId, 30),
-    getTodayPerBranch(scopedBranchId),
-  ]);
+  const [weeklyMetrics, financeMetrics, { series, branches }, todayPerBranch, lowStockAlerts] =
+    await Promise.all([
+      getWeeklyMetrics(scopedBranchId),
+      getFinanceMetrics(scopedBranchId),
+      getDailyRevenueSeries(scopedBranchId, 30),
+      getTodayPerBranch(scopedBranchId),
+      getLowStockAlerts(scopedBranchId),
+    ]);
 
   const isProfit = financeMetrics.netProfit >= 0;
 
@@ -33,6 +37,8 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-muted-foreground">A daily overview across all branches.</p>
       </FadeIn>
+
+      <LowStockAlerts alerts={lowStockAlerts} showBranch={isOwner} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard
