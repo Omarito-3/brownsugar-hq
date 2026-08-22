@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   movementSchema,
@@ -16,8 +17,8 @@ import {
 } from "@/lib/validations/stock";
 import { recordMovement } from "@/lib/actions/stock";
 import { useSound } from "@/hooks/use-sound";
-import { todayDateKey, formatIls } from "@/lib/format";
-import { UNIT_LABELS, MOVEMENT_TYPE_LABELS, ADJUSTMENT_DIRECTION_LABELS } from "@/lib/stock-labels";
+import { todayDateKey, formatIls, localizedName } from "@/lib/format";
+import { unitLabel, movementTypeLabel, adjustmentDirectionLabel } from "@/lib/stock-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/select";
 
 type BranchOption = { id: string; name: string };
-type ItemOption = { id: string; name: string; unit: string };
+type ItemOption = { id: string; name: string; nameAr: string | null; unit: string };
 type SupplierOption = { id: string; name: string };
 
 export function MovementForm({
@@ -56,12 +57,16 @@ export function MovementForm({
   defaultBranchId: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("stock");
+  const tRoot = useTranslations();
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const playSaved = useSound("saved");
   const [isPending, startTransition] = useTransition();
 
   const availableTypes = isOwner
     ? movementTypeValues
-    : movementTypeValues.filter((t) => t !== "TRANSFER");
+    : movementTypeValues.filter((mt) => mt !== "TRANSFER");
 
   const defaultValues: MovementFormInput = {
     type: "PURCHASE",
@@ -78,7 +83,7 @@ export function MovementForm({
   };
 
   const form = useForm<MovementFormInput, unknown, MovementInput>({
-    resolver: zodResolver(movementSchema),
+    resolver: zodResolver(movementSchema(t)),
     defaultValues,
   });
 
@@ -100,11 +105,9 @@ export function MovementForm({
 
       playSaved();
       if (result.expenseCreated) {
-        toast.success(
-          `Movement saved — ${formatIls(result.expenseCreated)} expense automatically logged in Finance.`
-        );
+        toast.success(t("form.expenseAutoLogged", { amount: formatIls(result.expenseCreated) }));
       } else {
-        toast.success("Movement saved.");
+        toast.success(t("form.savedToast"));
       }
       router.push("/stock");
     });
@@ -118,17 +121,17 @@ export function MovementForm({
           name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Movement Type</FormLabel>
+              <FormLabel className="text-base">{t("form.movementType")}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger className="h-12 w-full text-base">
-                    <SelectValue placeholder="Select a type" />
+                    <SelectValue placeholder={t("form.selectType")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {availableTypes.map((t) => (
-                    <SelectItem key={t} value={t} className="text-base">
-                      {MOVEMENT_TYPE_LABELS[t] ?? t}
+                  {availableTypes.map((mt) => (
+                    <SelectItem key={mt} value={mt} className="text-base">
+                      {movementTypeLabel(tRoot, mt)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -145,11 +148,11 @@ export function MovementForm({
               name="fromBranchId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">From Branch</FormLabel>
+                  <FormLabel className="text-base">{t("form.fromBranch")}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="h-12 w-full text-base">
-                        <SelectValue placeholder="From" />
+                        <SelectValue placeholder={t("form.from")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -169,11 +172,11 @@ export function MovementForm({
               name="toBranchId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">To Branch</FormLabel>
+                  <FormLabel className="text-base">{t("form.toBranch")}</FormLabel>
                   <Select value={field.value} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="h-12 w-full text-base">
-                        <SelectValue placeholder="To" />
+                        <SelectValue placeholder={t("form.to")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -195,11 +198,11 @@ export function MovementForm({
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Branch</FormLabel>
+                <FormLabel className="text-base">{t("form.branch")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="h-12 w-full text-base">
-                      <SelectValue placeholder="Select a branch" />
+                      <SelectValue placeholder={t("form.selectBranch")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -216,9 +219,9 @@ export function MovementForm({
           />
         ) : (
           <div>
-            <Label className="text-base">Branch</Label>
+            <Label className="text-base">{t("form.branch")}</Label>
             <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted px-3 text-base">
-              {branches[0]?.name ?? "No branch assigned"}
+              {branches[0]?.name ?? tCommon("noBranchAssigned")}
             </div>
           </div>
         )}
@@ -228,17 +231,17 @@ export function MovementForm({
           name="stockItemId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Item</FormLabel>
+              <FormLabel className="text-base">{t("form.item")}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger className="h-12 w-full text-base">
-                    <SelectValue placeholder="Select an item" />
+                    <SelectValue placeholder={t("form.selectItem")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {items.map((i) => (
                     <SelectItem key={i.id} value={i.id} className="text-base">
-                      {i.name}
+                      {localizedName(i.name, i.nameAr, locale)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,12 +258,9 @@ export function MovementForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base">
-                  Quantity
+                  {t("form.quantity")}
                   {selectedItem && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      ({UNIT_LABELS[selectedItem.unit] ?? selectedItem.unit})
-                    </span>
+                    <span className="text-muted-foreground"> ({unitLabel(tRoot, selectedItem.unit)})</span>
                   )}
                 </FormLabel>
                 <FormControl>
@@ -284,7 +284,7 @@ export function MovementForm({
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Date</FormLabel>
+                <FormLabel className="text-base">{t("form.date")}</FormLabel>
                 <FormControl>
                   <Input type="date" max={todayDateKey()} className="h-12 text-base" {...field} />
                 </FormControl>
@@ -300,17 +300,17 @@ export function MovementForm({
             name="direction"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Direction</FormLabel>
+                <FormLabel className="text-base">{t("form.direction")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="h-12 w-full text-base">
-                      <SelectValue placeholder="Increase or decrease?" />
+                      <SelectValue placeholder={t("form.selectDirection")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     {adjustmentDirectionValues.map((d) => (
                       <SelectItem key={d} value={d} className="text-base">
-                        {ADJUSTMENT_DIRECTION_LABELS[d]}
+                        {adjustmentDirectionLabel(tRoot, d)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -329,11 +329,11 @@ export function MovementForm({
                 name="supplierId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Supplier (optional)</FormLabel>
+                    <FormLabel className="text-base">{t("form.supplierOptional")}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="h-12 w-full text-base">
-                          <SelectValue placeholder="Select a supplier" />
+                          <SelectValue placeholder={t("form.selectSupplier")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -353,7 +353,7 @@ export function MovementForm({
                 name="costIls"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Cost (₪, optional)</FormLabel>
+                    <FormLabel className="text-base">{t("form.costOptional")}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -371,9 +371,7 @@ export function MovementForm({
                 )}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              If you enter a cost, we&apos;ll automatically log a matching expense in Finance.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("form.autoExpenseNote")}</p>
           </>
         )}
 
@@ -382,9 +380,14 @@ export function MovementForm({
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Notes (optional)</FormLabel>
+              <FormLabel className="text-base">{t("form.notesOptional")}</FormLabel>
               <FormControl>
-                <Textarea rows={3} className="text-base" placeholder="Anything worth noting…" {...field} />
+                <Textarea
+                  rows={3}
+                  className="text-base"
+                  placeholder={t("form.notesPlaceholder")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -393,7 +396,7 @@ export function MovementForm({
 
         <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isPending}>
           {isPending && <Loader2 className="size-4 animate-spin" />}
-          Save movement
+          {t("form.saveMovement")}
         </Button>
       </form>
     </Form>

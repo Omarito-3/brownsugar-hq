@@ -1,6 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart } from "recharts";
+import { useTranslations } from "next-intl";
 
 import {
   ChartContainer,
@@ -13,29 +14,26 @@ import {
 import { assignColorsForKeys } from "@/lib/branch-colors";
 import type { CategoryBreakdownPoint } from "@/lib/queries/finance";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  RENT: "Rent",
-  SUPPLIES: "Supplies",
-  SALARY: "Salary",
-  MARKETING: "Marketing",
-  EQUIPMENT: "Equipment",
-  OTHER: "Other",
-};
+const CATEGORY_KEYS = ["RENT", "SUPPLIES", "SALARY", "MARKETING", "EQUIPMENT", "OTHER"] as const;
 
 export function ExpenseCategoryDonut({ data }: { data: CategoryBreakdownPoint[] }) {
+  const t = useTranslations("finance");
   const colors = assignColorsForKeys(data.map((d) => d.category));
 
+  function categoryLabel(category: string): string {
+    return (CATEGORY_KEYS as readonly string[]).includes(category)
+      ? t(`categories.${category}` as (typeof CATEGORY_KEYS)[number])
+      : category;
+  }
+
   const config: ChartConfig = Object.fromEntries(
-    data.map((d) => [
-      d.category,
-      { label: CATEGORY_LABELS[d.category] ?? d.category, color: colors.get(d.category) },
-    ])
+    data.map((d) => [d.category, { label: categoryLabel(d.category), color: colors.get(d.category) }])
   );
 
   if (data.length === 0) {
     return (
       <p className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
-        No expenses recorded this month.
+        {t("noExpensesThisMonth")}
       </p>
     );
   }

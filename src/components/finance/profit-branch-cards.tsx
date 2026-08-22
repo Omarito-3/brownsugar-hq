@@ -1,4 +1,7 @@
+"use client";
+
 import { Store } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -9,6 +12,7 @@ import type { getProfitByBranch } from "@/lib/queries/finance";
 type ProfitByBranch = Awaited<ReturnType<typeof getProfitByBranch>>;
 
 export function ProfitBranchCards({ data }: { data: ProfitByBranch }) {
+  const t = useTranslations("finance");
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((branch, i) => {
@@ -34,11 +38,11 @@ export function ProfitBranchCards({ data }: { data: ProfitByBranch }) {
                   {formatIls(branch.net)}
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Revenue</span>
+                  <span>{t("revenue")}</span>
                   <span className="tabular-nums text-foreground">{formatIls(branch.revenue)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Expenses</span>
+                  <span>{t("expenses")}</span>
                   <span className="tabular-nums text-foreground">{formatIls(branch.expenses)}</span>
                 </div>
               </CardContent>

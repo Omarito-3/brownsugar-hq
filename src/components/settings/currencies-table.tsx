@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,8 @@ import { formatDate } from "@/lib/format";
 type Currency = { code: string; rateToIls: number; updatedAt: Date };
 
 function CurrencyRow({ currency }: { currency: Currency }) {
+  const t = useTranslations("settings.currenciesPage");
+  const locale = useLocale();
   const [rate, setRate] = useState(String(currency.rateToIls));
   const [isPending, startTransition] = useTransition();
 
@@ -28,7 +31,7 @@ function CurrencyRow({ currency }: { currency: Currency }) {
     startTransition(async () => {
       const result = await updateCurrencyRate({ code: currency.code, rateToIls: Number(rate) });
       if (result.ok) {
-        toast.success(`${currency.code} rate updated.`);
+        toast.success(t("rateUpdated", { code: currency.code }));
       } else {
         toast.error(result.error);
       }
@@ -51,11 +54,11 @@ function CurrencyRow({ currency }: { currency: Currency }) {
           className="h-10 w-32"
         />
       </TableCell>
-      <TableCell className="text-muted-foreground">{formatDate(currency.updatedAt)}</TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-muted-foreground">{formatDate(currency.updatedAt, locale)}</TableCell>
+      <TableCell className="text-end">
         <Button size="sm" onClick={handleSave} disabled={!changed || isPending}>
           {isPending && <Loader2 className="size-4 animate-spin" />}
-          Save
+          {t("save")}
         </Button>
       </TableCell>
     </TableRow>
@@ -63,23 +66,22 @@ function CurrencyRow({ currency }: { currency: Currency }) {
 }
 
 export function CurrenciesTable({ currencies }: { currencies: Currency[] }) {
+  const t = useTranslations("settings.currenciesPage");
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Currency Rates</CardTitle>
+        <CardTitle>{t("cardTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Rate changes only apply to new sales and expense entries going forward — existing
-          entries keep the rate that was in effect when they were saved.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("rateNote")}</p>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Currency</TableHead>
-                <TableHead>Rate to ILS</TableHead>
-                <TableHead>Last Updated</TableHead>
+                <TableHead>{t("columnCurrency")}</TableHead>
+                <TableHead>{t("columnRate")}</TableHead>
+                <TableHead>{t("columnLastUpdated")}</TableHead>
                 <TableHead className="w-0" />
               </TableRow>
             </TableHeader>

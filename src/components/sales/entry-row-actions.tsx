@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,8 @@ import { deleteSalesEntry } from "@/lib/actions/sales";
 
 export function EntryRowActions({ id, label }: { id: string; label: string }) {
   const router = useRouter();
+  const t = useTranslations("sales");
+  const tCommon = useTranslations("common");
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -29,7 +32,7 @@ export function EntryRowActions({ id, label }: { id: string; label: string }) {
     startTransition(async () => {
       const result = await deleteSalesEntry(id);
       if (result.ok) {
-        toast.success("Entry deleted.");
+        toast.success(t("entryDeleted"));
         setOpen(false);
         router.refresh();
       } else {
@@ -40,7 +43,7 @@ export function EntryRowActions({ id, label }: { id: string; label: string }) {
 
   return (
     <div className="flex items-center justify-end gap-1">
-      <Button variant="ghost" size="icon-sm" asChild aria-label={`Edit ${label}`}>
+      <Button variant="ghost" size="icon-sm" asChild aria-label={t("editAria", { label })}>
         <Link href={`/sales/${id}/edit`}>
           <Pencil className="size-4" />
         </Link>
@@ -51,7 +54,7 @@ export function EntryRowActions({ id, label }: { id: string; label: string }) {
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Delete ${label}`}
+            aria-label={t("deleteAria", { label })}
             className="text-destructive hover:text-destructive"
           >
             <Trash2 className="size-4" />
@@ -59,14 +62,11 @@ export function EntryRowActions({ id, label }: { id: string; label: string }) {
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this entry?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the sales entry for {label}, including any product
-              breakdown. This can&apos;t be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("deleteTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("deleteDescription", { label })}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPending}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -76,7 +76,7 @@ export function EntryRowActions({ id, label }: { id: string; label: string }) {
               className="bg-destructive text-white hover:bg-destructive/90"
             >
               {isPending && <Loader2 className="size-4 animate-spin" />}
-              Delete
+              {tCommon("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

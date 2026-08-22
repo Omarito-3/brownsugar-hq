@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ReceiptText } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   Card,
@@ -35,19 +38,22 @@ export function RecentEntriesTable({
   entries: RecentEntry[];
   canManage: boolean;
 }) {
+  const t = useTranslations("sales");
+  const locale = useLocale();
+
   return (
     <FadeIn delay={0.2}>
       <Card>
         <CardHeader>
-          <CardTitle>Recent Entries</CardTitle>
+          <CardTitle>{t("recentEntries")}</CardTitle>
         </CardHeader>
         <CardContent>
           {entries.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center text-muted-foreground">
               <ReceiptText className="size-8" />
-              <p>No sales entries yet.</p>
+              <p>{t("noEntriesYet")}</p>
               <Link href="/sales/new" className="text-sm font-medium text-primary hover:underline">
-                Add your first entry
+                {t("addFirstEntry")}
               </Link>
             </div>
           ) : (
@@ -55,10 +61,10 @@ export function RecentEntriesTable({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead className="text-right">Orders</TableHead>
+                    <TableHead>{t("columnBranch")}</TableHead>
+                    <TableHead>{t("columnDate")}</TableHead>
+                    <TableHead className="text-end">{t("columnTotal")}</TableHead>
+                    <TableHead className="text-end">{t("columnOrders")}</TableHead>
                     {canManage && <TableHead className="w-0" />}
                   </TableRow>
                 </TableHeader>
@@ -67,19 +73,19 @@ export function RecentEntriesTable({
                     <TableRow key={entry.id}>
                       <TableCell className="font-medium">{entry.branchName}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {formatDate(entry.date)}
+                        {formatDate(entry.date, locale)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
+                      <TableCell className="text-end tabular-nums">
                         {formatIls(entry.totalIls)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
+                      <TableCell className="text-end tabular-nums">
                         {formatNumber(entry.orderCount)}
                       </TableCell>
                       {canManage && (
                         <TableCell className="p-1">
                           <EntryRowActions
                             id={entry.id}
-                            label={`${entry.branchName} · ${formatDate(entry.date)}`}
+                            label={`${entry.branchName} · ${formatDate(entry.date, locale)}`}
                           />
                         </TableCell>
                       )}

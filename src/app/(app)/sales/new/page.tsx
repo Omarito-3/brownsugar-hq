@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
@@ -12,6 +13,7 @@ export default async function NewSalesEntryPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  const t = await getTranslations("sales");
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
@@ -33,8 +35,8 @@ export default async function NewSalesEntryPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">New Sales Entry</h1>
-        <p className="mt-1 text-muted-foreground">Log today&apos;s totals for a branch.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("newPageTitle")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("newPageSubtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <SalesEntryForm

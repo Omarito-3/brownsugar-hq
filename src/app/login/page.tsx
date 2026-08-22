@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,12 @@ import { FadeIn } from "@/components/motion/fade-in";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<LoginInput>({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(loginSchema(t)),
     defaultValues: { email: "", password: "" },
   });
 
@@ -43,7 +45,7 @@ export default function LoginPage() {
     setIsSubmitting(false);
 
     if (result?.error) {
-      setError("Invalid email or password.");
+      setError(t("invalidCredentials"));
       return;
     }
 
@@ -56,10 +58,8 @@ export default function LoginPage() {
       <FadeIn className="w-full max-w-sm">
         <Card>
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">
-              Brown Sugar <span className="text-primary">HQ</span>
-            </CardTitle>
-            <CardDescription>Sign in to manage your branches</CardDescription>
+            <CardTitle className="text-2xl">{t("title")}</CardTitle>
+            <CardDescription>{t("subtitle")}</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -69,9 +69,14 @@ export default function LoginPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("email")}</FormLabel>
                       <FormControl>
-                        <Input type="email" autoComplete="email" placeholder="you@brownsugar.hq" {...field} />
+                        <Input
+                          type="email"
+                          autoComplete="email"
+                          placeholder={t("emailPlaceholder")}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -83,7 +88,7 @@ export default function LoginPage() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t("password")}</FormLabel>
                       <FormControl>
                         <Input type="password" autoComplete="current-password" {...field} />
                       </FormControl>
@@ -96,7 +101,7 @@ export default function LoginPage() {
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting && <Loader2 className="size-4 animate-spin" />}
-                  Sign in
+                  {t("signIn")}
                 </Button>
               </form>
             </Form>

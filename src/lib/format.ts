@@ -42,6 +42,7 @@ export function formatPercent(value: number, options?: { showSign?: boolean }): 
   return `${sign}${value.toFixed(1)}%`;
 }
 
+/** Chart axis labels stay in a fixed neutral format regardless of locale — charts are LTR internals. */
 export function formatShortDate(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat("en-US", {
@@ -51,13 +52,15 @@ export function formatShortDate(date: Date | string): string {
   }).format(d);
 }
 
-export function formatDate(date: Date | string): string {
+/** `numberingSystem: "latn"` keeps digits Western even under the Arabic locale. */
+export function formatDate(date: Date | string, locale = "en"): string {
   const d = typeof date === "string" ? new Date(date) : date;
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
     year: "numeric",
     timeZone: "UTC",
+    numberingSystem: "latn",
   }).format(d);
 }
 
@@ -69,4 +72,9 @@ export function toDateKey(date: Date | string): string {
 
 export function todayDateKey(): string {
   return toDateKey(new Date());
+}
+
+/** Falls back to the English name when no Arabic name is set, or the locale isn't Arabic. */
+export function localizedName(name: string, nameAr: string | null | undefined, locale: string): string {
+  return locale === "ar" && nameAr ? nameAr : name;
 }

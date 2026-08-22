@@ -6,6 +6,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import {
   expenseSchema,
@@ -37,15 +38,6 @@ import {
 } from "@/components/ui/select";
 import { ReceiptUpload } from "@/components/finance/receipt-upload";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  RENT: "Rent",
-  SUPPLIES: "Supplies",
-  SALARY: "Salary",
-  MARKETING: "Marketing",
-  EQUIPMENT: "Equipment",
-  OTHER: "Other",
-};
-
 const categories = expenseCategoryValues;
 
 type BranchOption = { id: string; name: string };
@@ -67,11 +59,13 @@ export function ExpenseForm({
   defaultValues: ExpenseFormInput;
 }) {
   const router = useRouter();
+  const t = useTranslations("finance");
+  const tCommon = useTranslations("common");
   const playSaved = useSound("saved");
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<ExpenseFormInput, unknown, ExpenseInput>({
-    resolver: zodResolver(expenseSchema),
+    resolver: zodResolver(expenseSchema(t)),
     defaultValues,
   });
 
@@ -91,7 +85,7 @@ export function ExpenseForm({
       }
 
       playSaved();
-      toast.success(mode === "create" ? "Expense saved." : "Expense updated.");
+      toast.success(mode === "create" ? t("form.savedToast") : t("form.updatedToast"));
       router.push("/finance");
     });
   }
@@ -105,11 +99,11 @@ export function ExpenseForm({
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Branch</FormLabel>
+                <FormLabel className="text-base">{t("form.branch")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="h-12 w-full text-base">
-                      <SelectValue placeholder="Select a branch" />
+                      <SelectValue placeholder={t("form.selectBranch")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -126,9 +120,9 @@ export function ExpenseForm({
           />
         ) : (
           <div>
-            <Label className="text-base">Branch</Label>
+            <Label className="text-base">{t("form.branch")}</Label>
             <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted px-3 text-base">
-              {branches[0]?.name ?? "No branch assigned"}
+              {branches[0]?.name ?? tCommon("noBranchAssigned")}
             </div>
           </div>
         )}
@@ -138,7 +132,7 @@ export function ExpenseForm({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Date</FormLabel>
+              <FormLabel className="text-base">{t("form.date")}</FormLabel>
               <FormControl>
                 <Input type="date" max={todayDateKey()} className="h-12 text-base" {...field} />
               </FormControl>
@@ -152,17 +146,17 @@ export function ExpenseForm({
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Category</FormLabel>
+              <FormLabel className="text-base">{t("form.category")}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger className="h-12 w-full text-base">
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder={t("form.selectCategory")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {categories.map((c) => (
                     <SelectItem key={c} value={c} className="text-base">
-                      {CATEGORY_LABELS[c] ?? c}
+                      {t(`categories.${c}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -178,14 +172,14 @@ export function ExpenseForm({
             name="amountOriginal"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Amount</FormLabel>
+                <FormLabel className="text-base">{t("form.amount")}</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     inputMode="decimal"
                     step="0.01"
                     min="0"
-                    placeholder="0.00"
+                    placeholder={t("form.amountPlaceholder")}
                     className="h-12 text-base"
                     {...field}
                     value={field.value as number | string}
@@ -200,11 +194,11 @@ export function ExpenseForm({
             name="currencyCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Currency</FormLabel>
+                <FormLabel className="text-base">{t("form.currency")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="h-12 w-full text-base">
-                      <SelectValue placeholder="Currency" />
+                      <SelectValue placeholder={t("form.currencyPlaceholder")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -230,9 +224,14 @@ export function ExpenseForm({
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Notes (optional)</FormLabel>
+              <FormLabel className="text-base">{t("form.notesOptional")}</FormLabel>
               <FormControl>
-                <Textarea rows={3} className="text-base" placeholder="Anything worth noting…" {...field} />
+                <Textarea
+                  rows={3}
+                  className="text-base"
+                  placeholder={t("form.notesPlaceholder")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -244,7 +243,7 @@ export function ExpenseForm({
           name="receiptUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Receipt (optional)</FormLabel>
+              <FormLabel className="text-base">{t("form.receiptOptional")}</FormLabel>
               <FormControl>
                 <ReceiptUpload value={field.value ?? ""} onChange={field.onChange} />
               </FormControl>
@@ -255,7 +254,7 @@ export function ExpenseForm({
 
         <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isPending}>
           {isPending && <Loader2 className="size-4 animate-spin" />}
-          {mode === "create" ? "Save expense" : "Update expense"}
+          {mode === "create" ? t("form.saveExpense") : t("form.updateExpense")}
         </Button>
       </form>
     </Form>

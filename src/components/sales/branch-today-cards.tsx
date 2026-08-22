@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Store } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -9,6 +12,7 @@ import type { getTodayPerBranch } from "@/lib/queries/sales";
 type TodayPerBranch = Awaited<ReturnType<typeof getTodayPerBranch>>;
 
 export function BranchTodayCards({ data }: { data: TodayPerBranch }) {
+  const t = useTranslations("branchToday");
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {data.map((branch, i) => (
@@ -29,7 +33,7 @@ export function BranchTodayCards({ data }: { data: TodayPerBranch }) {
                     {formatIls(branch.totalIls)}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {formatNumber(branch.orderCount)} orders today
+                    {t("ordersToday", { count: formatNumber(branch.orderCount) })}
                   </p>
                 </>
               ) : (
@@ -39,7 +43,7 @@ export function BranchTodayCards({ data }: { data: TodayPerBranch }) {
                     href="/sales/new"
                     className="mt-1 inline-block text-xs font-medium text-primary hover:underline"
                   >
-                    No entry yet — add one
+                    {t("noEntryYet")}
                   </Link>
                 </>
               )}

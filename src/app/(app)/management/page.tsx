@@ -1,11 +1,14 @@
 import { Building2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+
 import { PagePlaceholder } from "@/components/layout/page-placeholder";
 
-export default function ManagementPage() {
+export default async function ManagementPage() {
+  const t = await getTranslations();
   return (
     <PagePlaceholder
-      title="Management"
-      description="Branches, users, and permissions."
+      title={t("nav.management")}
+      description={t("placeholder.sections.management")}
       icon={Building2}
     />
   );

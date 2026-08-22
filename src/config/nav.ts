@@ -11,18 +11,18 @@ import {
 } from "lucide-react";
 
 export type NavItem = {
-  title: string;
+  titleKey: "dashboard" | "sales" | "finance" | "stock" | "employees" | "marketing" | "management" | "settings";
   href: string;
   icon: LucideIcon;
 };
 
 export const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Sales", href: "/sales", icon: ShoppingCart },
-  { title: "Finance", href: "/finance", icon: Wallet },
-  { title: "Stock", href: "/stock", icon: Package },
-  { title: "Employees", href: "/employees", icon: Users },
-  { title: "Marketing", href: "/marketing", icon: Megaphone },
-  { title: "Management", href: "/management", icon: Building2 },
-  { title: "Settings", href: "/settings", icon: Settings },
+  { titleKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { titleKey: "sales", href: "/sales", icon: ShoppingCart },
+  { titleKey: "finance", href: "/finance", icon: Wallet },
+  { titleKey: "stock", href: "/stock", icon: Package },
+  { titleKey: "employees", href: "/employees", icon: Users },
+  { titleKey: "marketing", href: "/marketing", icon: Megaphone },
+  { titleKey: "management", href: "/management", icon: Building2 },
+  { titleKey: "settings", href: "/settings", icon: Settings },
 ];

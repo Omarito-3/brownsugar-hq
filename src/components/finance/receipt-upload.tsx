@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { FileText, Loader2, Paperclip, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { uploadReceipt } from "@/lib/actions/upload";
@@ -14,6 +15,7 @@ export function ReceiptUpload({
   value: string;
   onChange: (url: string) => void;
 }) {
+  const t = useTranslations("finance.form");
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,13 +56,13 @@ export function ReceiptUpload({
               <FileText className="size-6 text-muted-foreground" />
             </span>
           )}
-          <div className="flex-1 truncate text-sm text-muted-foreground">Receipt attached</div>
+          <div className="flex-1 truncate text-sm text-muted-foreground">{t("receiptAttached")}</div>
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={handleRemove}
-            aria-label="Remove receipt"
+            aria-label={t("removeReceiptAria")}
           >
             <X className="size-4" />
           </Button>
@@ -74,7 +76,7 @@ export function ReceiptUpload({
           onClick={() => inputRef.current?.click()}
         >
           {uploading ? <Loader2 className="size-4 animate-spin" /> : <Paperclip className="size-4" />}
-          {uploading ? "Uploading…" : "Attach receipt photo"}
+          {uploading ? t("uploading") : t("attachReceipt")}
         </Button>
       )}
       <input

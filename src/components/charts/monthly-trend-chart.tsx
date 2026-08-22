@@ -1,6 +1,7 @@
 "use client";
 
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { useTranslations } from "next-intl";
 
 import {
   ChartContainer,
@@ -13,13 +14,15 @@ import {
 import { formatIls } from "@/lib/format";
 import type { MonthlyTrendPoint } from "@/lib/queries/finance";
 
-const chartConfig: ChartConfig = {
-  revenue: { label: "Revenue", color: "var(--chart-1)" },
-  expenses: { label: "Expenses", color: "var(--chart-2)" },
-  profit: { label: "Profit", color: "var(--chart-3)" },
-};
-
 export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
+  const t = useTranslations("finance");
+
+  const chartConfig: ChartConfig = {
+    revenue: { label: t("revenue"), color: "var(--chart-1)" },
+    expenses: { label: t("expenses"), color: "var(--chart-2)" },
+    profit: { label: t("netProfit"), color: "var(--chart-3)" },
+  };
+
   return (
     <ChartContainer config={chartConfig} className="aspect-auto h-[300px] w-full">
       <LineChart data={data} margin={{ left: 8, right: 8, top: 8 }}>
@@ -36,7 +39,7 @@ export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
         <ChartLegend content={<ChartLegendContent />} />
         <Line
           dataKey="revenue"
-          name="Revenue"
+          name={t("revenue")}
           type="monotone"
           stroke="var(--chart-1)"
           strokeWidth={2}
@@ -46,7 +49,7 @@ export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
         />
         <Line
           dataKey="expenses"
-          name="Expenses"
+          name={t("expenses")}
           type="monotone"
           stroke="var(--chart-2)"
           strokeWidth={2}
@@ -56,7 +59,7 @@ export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
         />
         <Line
           dataKey="profit"
-          name="Profit"
+          name={t("netProfit")}
           type="monotone"
           stroke="var(--chart-3)"
           strokeWidth={2}

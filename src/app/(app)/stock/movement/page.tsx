@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { MovementForm } from "@/components/stock/movement-form";
@@ -10,6 +11,7 @@ export default async function StockMovementPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  const t = await getTranslations("stock");
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
@@ -28,8 +30,8 @@ export default async function StockMovementPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">Record Movement</h1>
-        <p className="mt-1 text-muted-foreground">Log a purchase, usage, waste, transfer, or adjustment.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("movementPageTitle")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("movementPageSubtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <MovementForm

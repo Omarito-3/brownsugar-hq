@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { navItems } from "@/config/nav";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { SoundToggle } from "@/components/layout/sound-toggle";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 type SidebarUser = {
   name?: string | null;
@@ -17,12 +19,15 @@ type SidebarUser = {
 
 export function Sidebar({ user }: { user: SidebarUser }) {
   const pathname = usePathname();
+  const t = useTranslations("nav");
+  const tRoles = useTranslations("roles");
+  const tCommon = useTranslations("common");
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border bg-sidebar md:flex">
+    <aside className="fixed inset-y-0 start-0 z-40 hidden w-64 flex-col border-e border-border bg-sidebar md:flex">
       <div className="flex h-16 items-center gap-2 border-b border-border px-6">
         <span className="text-lg font-semibold tracking-tight text-sidebar-foreground">
-          Brown Sugar <span className="text-primary">HQ</span>
+          {tCommon("appName")} <span className="text-primary">{tCommon("appNameSuffix")}</span>
         </span>
       </div>
 
@@ -42,7 +47,7 @@ export function Sidebar({ user }: { user: SidebarUser }) {
               )}
             >
               <Icon className="size-5 shrink-0" />
-              {item.title}
+              {t(item.titleKey)}
             </Link>
           );
         })}
@@ -54,13 +59,14 @@ export function Sidebar({ user }: { user: SidebarUser }) {
             <p className="truncate text-sm font-medium text-sidebar-foreground">
               {user.name ?? user.email}
             </p>
-            <p className="truncate text-xs text-muted-foreground">{user.role}</p>
+            <p className="truncate text-xs text-muted-foreground">{tRoles(user.role as "OWNER" | "MANAGER" | "STAFF")}</p>
           </div>
           <div className="flex items-center">
             <SoundToggle />
             <ThemeToggle />
           </div>
         </div>
+        <LanguageSwitcher />
         <SignOutButton />
       </div>
     </aside>

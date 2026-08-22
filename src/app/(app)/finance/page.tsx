@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ export default async function FinancePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  const t = await getTranslations("finance");
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
@@ -38,13 +40,13 @@ export default async function FinancePage() {
     <div className="space-y-8">
       <FadeIn className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Finance</h1>
-          <p className="mt-1 text-muted-foreground">Expenses, profit, and margins across branches.</p>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button asChild size="lg" className="h-12 text-base">
           <Link href="/finance/new">
             <Plus className="size-4" />
-            New expense
+            {t("newExpense")}
           </Link>
         </Button>
       </FadeIn>
@@ -53,7 +55,7 @@ export default async function FinancePage() {
 
       <div className="space-y-3">
         <FadeIn delay={0.05}>
-          <h2 className="text-lg font-medium">Profit by Branch — This Month</h2>
+          <h2 className="text-lg font-medium">{t("profitByBranchMonth")}</h2>
         </FadeIn>
         <ProfitBranchCards data={profitByBranch} />
       </div>
@@ -62,7 +64,7 @@ export default async function FinancePage() {
         <FadeIn delay={0.1} className="lg:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle>Revenue vs Expenses — Last 6 Months</CardTitle>
+              <CardTitle>{t("revenueVsExpenses6mo")}</CardTitle>
             </CardHeader>
             <CardContent>
               <MonthlyTrendChart data={monthlyTrend} />
@@ -72,7 +74,7 @@ export default async function FinancePage() {
         <FadeIn delay={0.15}>
           <Card>
             <CardHeader>
-              <CardTitle>Expenses by Category — This Month</CardTitle>
+              <CardTitle>{t("expensesByCategoryMonth")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ExpenseCategoryDonut data={categoryBreakdown} />

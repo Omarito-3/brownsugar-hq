@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -9,33 +13,36 @@ import {
 } from "@/components/ui/table";
 import { FadeIn } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
-import { UNIT_LABELS } from "@/lib/stock-labels";
+import { unitLabel } from "@/lib/stock-labels";
+import { localizedName } from "@/lib/format";
 import type { getStockLevelsGrid } from "@/lib/queries/stock";
 
 type StockLevelsGrid = Awaited<ReturnType<typeof getStockLevelsGrid>>;
 
 export function StockLevelsGrid({ data }: { data: StockLevelsGrid }) {
   const { items, branches, quantities } = data;
+  const t = useTranslations();
+  const locale = useLocale();
 
   return (
     <FadeIn delay={0.1}>
       <Card>
         <CardHeader>
-          <CardTitle>Stock Levels</CardTitle>
+          <CardTitle>{t("stock.stockLevels")}</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No stock items configured yet.
+              {t("stock.noItemsConfigured")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item</TableHead>
+                    <TableHead>{t("stock.columnItem")}</TableHead>
                     {branches.map((b) => (
-                      <TableHead key={b.id} className="text-right">
+                      <TableHead key={b.id} className="text-end">
                         {b.name}
                       </TableHead>
                     ))}
@@ -44,7 +51,9 @@ export function StockLevelsGrid({ data }: { data: StockLevelsGrid }) {
                 <TableBody>
                   {items.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {localizedName(item.name, item.nameAr, locale)}
+                      </TableCell>
                       {branches.map((branch) => {
                         const qty = quantities[branch.id]?.[item.id] ?? 0;
                         const isOut = qty <= 0;
@@ -53,12 +62,12 @@ export function StockLevelsGrid({ data }: { data: StockLevelsGrid }) {
                           <TableCell
                             key={branch.id}
                             className={cn(
-                              "text-right tabular-nums",
+                              "text-end tabular-nums",
                               isOut && "font-medium text-destructive",
                               isLow && "font-medium text-amber-500"
                             )}
                           >
-                            {qty} {UNIT_LABELS[item.unit] ?? item.unit}
+                            {qty} {unitLabel(t, item.unit)}
                           </TableCell>
                         );
                       })}

@@ -1,8 +1,14 @@
+"use client";
+
 import { AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+import { useLocale } from "next-intl";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
-import { UNIT_LABELS } from "@/lib/stock-labels";
+import { unitLabel } from "@/lib/stock-labels";
+import { localizedName } from "@/lib/format";
 import type { getLowStockAlerts } from "@/lib/queries/stock";
 
 type LowStockAlerts = Awaited<ReturnType<typeof getLowStockAlerts>>;
@@ -14,6 +20,9 @@ export function LowStockAlerts({
   alerts: LowStockAlerts;
   showBranch?: boolean;
 }) {
+  const t = useTranslations();
+  const locale = useLocale();
+
   if (alerts.length === 0) return null;
 
   return (
@@ -21,7 +30,7 @@ export function LowStockAlerts({
       <FadeIn>
         <h2 className="flex items-center gap-2 text-lg font-medium text-amber-500">
           <AlertTriangle className="size-5" />
-          Low Stock Alerts
+          {t("lowStock.heading")}
         </h2>
       </FadeIn>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -30,15 +39,15 @@ export function LowStockAlerts({
             <Card className="border-amber-500/40 bg-amber-500/10">
               <CardContent className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-medium">{alert.itemName}</p>
+                  <p className="font-medium">{localizedName(alert.itemName, alert.itemNameAr, locale)}</p>
                   {showBranch && <p className="text-sm text-muted-foreground">{alert.branchName}</p>}
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <p className="text-lg font-semibold text-amber-500">
-                    {alert.currentQuantity} {UNIT_LABELS[alert.unit] ?? alert.unit}
+                    {alert.currentQuantity} {unitLabel(t, alert.unit)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    below {alert.threshold} {UNIT_LABELS[alert.unit] ?? alert.unit}
+                    {t("lowStock.below", { threshold: `${alert.threshold} ${unitLabel(t, alert.unit)}` })}
                   </p>
                 </div>
               </CardContent>

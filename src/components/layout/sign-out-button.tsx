@@ -2,16 +2,19 @@
 
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 
 export function SignOutButton({ compact = false }: { compact?: boolean }) {
+  const t = useTranslations("common");
+
   if (compact) {
     return (
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Sign out"
+        aria-label={t("signOut")}
         onClick={() => signOut({ callbackUrl: "/login" })}
       >
         <LogOut className="size-5" />
@@ -26,7 +29,7 @@ export function SignOutButton({ compact = false }: { compact?: boolean }) {
       onClick={() => signOut({ callbackUrl: "/login" })}
     >
       <LogOut className="size-4" />
-      Sign out
+      {t("signOut")}
     </Button>
   );
 }

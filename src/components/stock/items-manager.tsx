@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import {
   stockItemSchema,
@@ -18,7 +19,7 @@ import {
   setStockItemActive,
   deleteStockItem,
 } from "@/lib/actions/stock-items";
-import { UNIT_LABELS } from "@/lib/stock-labels";
+import { unitLabel } from "@/lib/stock-labels";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -57,9 +58,11 @@ export type StockItemRow = {
 };
 
 function CreateItemForm() {
+  const t = useTranslations("stock");
+  const tRoot = useTranslations();
   const [isPending, startTransition] = useTransition();
   const form = useForm<StockItemFormInput, unknown, StockItemInput>({
-    resolver: zodResolver(stockItemSchema),
+    resolver: zodResolver(stockItemSchema(t)),
     defaultValues: { name: "", nameAr: "", unit: "PIECE", lowStockThreshold: "" },
   });
 
@@ -67,7 +70,7 @@ function CreateItemForm() {
     startTransition(async () => {
       const result = await createStockItem(values);
       if (result.ok) {
-        toast.success("Item created.");
+        toast.success(t("itemsPage.itemCreated"));
         form.reset({ name: "", nameAr: "", unit: "PIECE", lowStockThreshold: "" });
       } else {
         toast.error(result.error);
@@ -86,9 +89,9 @@ function CreateItemForm() {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>{t("itemsPage.name")}</FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Milk" {...field} />
+                <Input placeholder={t("itemsPage.namePlaceholder")} {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -99,7 +102,7 @@ function CreateItemForm() {
           name="nameAr"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Arabic name (optional)</FormLabel>
+              <FormLabel>{t("itemsPage.nameArLabel")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -112,7 +115,7 @@ function CreateItemForm() {
           name="unit"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Unit</FormLabel>
+              <FormLabel>{t("itemsPage.unit")}</FormLabel>
               <Select value={field.value} onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger className="w-full">
@@ -122,7 +125,7 @@ function CreateItemForm() {
                 <SelectContent>
                   {unitValues.map((u) => (
                     <SelectItem key={u} value={u}>
-                      {UNIT_LABELS[u]}
+                      {unitLabel(tRoot, u)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -136,7 +139,7 @@ function CreateItemForm() {
           name="lowStockThreshold"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Low stock threshold</FormLabel>
+              <FormLabel>{t("itemsPage.lowStockThreshold")}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -156,7 +159,7 @@ function CreateItemForm() {
           <Button type="submit" disabled={isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
             <Plus className="size-4" />
-            Add item
+            {t("itemsPage.addItemButton")}
           </Button>
         </div>
       </form>
@@ -165,6 +168,8 @@ function CreateItemForm() {
 }
 
 function ItemRow({ item }: { item: StockItemRow }) {
+  const t = useTranslations("stock");
+  const tRoot = useTranslations();
   const [name, setName] = useState(item.name);
   const [threshold, setThreshold] = useState(String(item.lowStockThreshold));
   const [isPending, startTransition] = useTransition();
@@ -179,7 +184,7 @@ function ItemRow({ item }: { item: StockItemRow }) {
         unit: item.unit,
         lowStockThreshold: Number(threshold),
       });
-      if (result.ok) toast.success("Item updated.");
+      if (result.ok) toast.success(t("itemsPage.itemUpdated"));
       else toast.error(result.error);
     });
   }
@@ -194,7 +199,7 @@ function ItemRow({ item }: { item: StockItemRow }) {
   function handleDelete() {
     startTransition(async () => {
       const result = await deleteStockItem(item.id);
-      if (result.ok) toast.success("Item deleted.");
+      if (result.ok) toast.success(t("itemsPage.itemDeleted"));
       else toast.error(result.error);
     });
   }
@@ -204,7 +209,7 @@ function ItemRow({ item }: { item: StockItemRow }) {
       <TableCell>
         <Input value={name} onChange={(e) => setName(e.target.value)} className="h-9 min-w-32" />
       </TableCell>
-      <TableCell className="text-muted-foreground">{UNIT_LABELS[item.unit] ?? item.unit}</TableCell>
+      <TableCell className="text-muted-foreground">{unitLabel(tRoot, item.unit)}</TableCell>
       <TableCell>
         <Input
           type="number"
@@ -219,11 +224,11 @@ function ItemRow({ item }: { item: StockItemRow }) {
       <TableCell>
         <Switch checked={item.isActive} onCheckedChange={handleToggleActive} disabled={isPending} />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">
         <div className="flex items-center justify-end gap-2">
           <Button size="sm" onClick={handleSave} disabled={!changed || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Save
+            {t("itemsPage.save")}
           </Button>
           <Button
             size="icon-sm"
@@ -231,7 +236,7 @@ function ItemRow({ item }: { item: StockItemRow }) {
             onClick={handleDelete}
             disabled={isPending}
             className="text-destructive hover:text-destructive"
-            aria-label={`Delete ${item.name}`}
+            aria-label={t("itemsPage.deleteAria", { name: item.name })}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -242,11 +247,13 @@ function ItemRow({ item }: { item: StockItemRow }) {
 }
 
 export function ItemsManager({ items }: { items: StockItemRow[] }) {
+  const t = useTranslations("stock.itemsPage");
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Add Item</CardTitle>
+          <CardTitle>{t("addItemCard")}</CardTitle>
         </CardHeader>
         <CardContent>
           <CreateItemForm />
@@ -254,21 +261,21 @@ export function ItemsManager({ items }: { items: StockItemRow[] }) {
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Stock Items</CardTitle>
+          <CardTitle>{t("stockItemsCard")}</CardTitle>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No stock items yet.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t("noItemsYet")}</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Unit</TableHead>
-                    <TableHead>Low Stock Threshold</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("columnName")}</TableHead>
+                    <TableHead>{t("columnUnit")}</TableHead>
+                    <TableHead>{t("columnThreshold")}</TableHead>
+                    <TableHead>{t("columnActive")}</TableHead>
+                    <TableHead className="text-end">{t("columnActions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

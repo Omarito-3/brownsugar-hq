@@ -1,4 +1,5 @@
 import { redirect, notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
@@ -20,6 +21,7 @@ export default async function EditSalesEntryPage({
   const entry = await getSalesEntryForEdit(id);
   if (!entry) notFound();
 
+  const t = await getTranslations("sales");
   const isOwner = session.user.role === "OWNER";
   const canEdit = isOwner || entry.branchId === session.user.branchId;
   if (!canEdit) redirect("/sales");
@@ -47,8 +49,8 @@ export default async function EditSalesEntryPage({
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">Edit Sales Entry</h1>
-        <p className="mt-1 text-muted-foreground">Update the totals for this entry.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("editPageTitle")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("editPageSubtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <SalesEntryForm

@@ -18,7 +18,7 @@ export default async function AppLayout({
       <Sidebar user={session.user} />
       <MobileTopbar />
 
-      <main className="min-h-screen pb-20 md:ml-64 md:pb-0">
+      <main className="min-h-screen pb-20 md:ms-64 md:pb-0">
         <div className="mx-auto w-full max-w-6xl px-4 py-6 md:px-8 md:py-10">
           {children}
         </div>

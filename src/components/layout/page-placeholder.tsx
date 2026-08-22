@@ -1,6 +1,10 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+import type { LucideIcon } from "lucide-react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
-import type { LucideIcon } from "lucide-react";
 
 export function PagePlaceholder({
   title,
@@ -11,6 +15,8 @@ export function PagePlaceholder({
   description: string;
   icon: LucideIcon;
 }) {
+  const t = useTranslations("placeholder");
+
   return (
     <FadeIn className="space-y-6">
       <div>
@@ -24,14 +30,11 @@ export function PagePlaceholder({
             <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Icon className="size-6" />
             </span>
-            Coming soon
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            This section hasn&apos;t been built yet. The navigation shell, auth, and data
-            model are ready — {title.toLowerCase()} features will land here next.
-          </p>
+          <p className="text-muted-foreground">{t("description", { title })}</p>
         </CardContent>
       </Card>
     </FadeIn>

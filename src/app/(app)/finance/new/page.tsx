@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { ExpenseForm } from "@/components/finance/expense-form";
@@ -11,6 +12,7 @@ export default async function NewExpensePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  const t = await getTranslations("finance");
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
@@ -32,8 +34,8 @@ export default async function NewExpensePage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">New Expense</h1>
-        <p className="mt-1 text-muted-foreground">Log an expense for a branch.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("newPageTitle")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("newPageSubtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <ExpenseForm

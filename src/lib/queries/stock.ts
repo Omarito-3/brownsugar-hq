@@ -14,7 +14,7 @@ export async function getLowStockAlerts(branchId?: string) {
     include: {
       branch: { select: { id: true, name: true } },
       stockItem: {
-        select: { id: true, name: true, unit: true, lowStockThreshold: true, isActive: true },
+        select: { id: true, name: true, nameAr: true, unit: true, lowStockThreshold: true, isActive: true },
       },
     },
   });
@@ -28,6 +28,7 @@ export async function getLowStockAlerts(branchId?: string) {
       branchName: r.branch.name,
       stockItemId: r.stockItem.id,
       itemName: r.stockItem.name,
+      itemNameAr: r.stockItem.nameAr,
       unit: r.stockItem.unit as string,
       currentQuantity: toNumber(r.currentQuantity),
       threshold: toNumber(r.stockItem.lowStockThreshold),
@@ -59,6 +60,7 @@ export async function getStockLevelsGrid(branchId?: string) {
     items: items.map((i) => ({
       id: i.id,
       name: i.name,
+      nameAr: i.nameAr,
       unit: i.unit as string,
       threshold: toNumber(i.lowStockThreshold),
     })),
@@ -74,7 +76,7 @@ export async function getRecentMovements(branchId?: string, limit = 15) {
     take: limit,
     include: {
       branch: { select: { name: true } },
-      stockItem: { select: { name: true, unit: true } },
+      stockItem: { select: { name: true, nameAr: true, unit: true } },
       supplier: { select: { name: true } },
     },
   });
@@ -84,6 +86,7 @@ export async function getRecentMovements(branchId?: string, limit = 15) {
     date: m.date,
     branchName: m.branch.name,
     itemName: m.stockItem.name,
+    itemNameAr: m.stockItem.nameAr,
     unit: m.stockItem.unit as string,
     type: m.type as string,
     direction: m.direction as string | null,
@@ -114,7 +117,7 @@ export async function getStockMetrics(branchId?: string) {
 
 export async function getStockItemsForForm() {
   const items = await prisma.stockItem.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
-  return items.map((i) => ({ id: i.id, name: i.name, unit: i.unit as string }));
+  return items.map((i) => ({ id: i.id, name: i.name, nameAr: i.nameAr, unit: i.unit as string }));
 }
 
 export async function getStockItemsManaged() {

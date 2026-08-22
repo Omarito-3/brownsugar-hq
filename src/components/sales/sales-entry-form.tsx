@@ -7,6 +7,7 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronDown, Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
 
 import {
   salesEntrySchema,
@@ -16,7 +17,7 @@ import {
 import { createSalesEntry, updateSalesEntry } from "@/lib/actions/sales";
 import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
-import { todayDateKey, formatIls, toNumber } from "@/lib/format";
+import { todayDateKey, formatIls, toNumber, localizedName } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +41,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type BranchOption = { id: string; name: string };
-type ProductOption = { id: string; name: string };
+type ProductOption = { id: string; name: string; nameAr: string | null };
 type CurrencyOption = { code: string; rateToIls: number };
 
 export function SalesEntryForm({
@@ -61,13 +62,16 @@ export function SalesEntryForm({
   defaultValues: SalesEntryFormInput;
 }) {
   const router = useRouter();
+  const t = useTranslations("sales");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
   const playSaved = useSound("saved");
   const [isPending, startTransition] = useTransition();
   const [duplicate, setDuplicate] = useState<{ message: string; entryId?: string } | null>(null);
   const [breakdownOpen, setBreakdownOpen] = useState((defaultValues.lineItems?.length ?? 0) > 0);
 
   const form = useForm<SalesEntryFormInput, unknown, SalesEntryInput>({
-    resolver: zodResolver(salesEntrySchema),
+    resolver: zodResolver(salesEntrySchema(t)),
     defaultValues,
   });
 
@@ -122,7 +126,7 @@ export function SalesEntryForm({
       }
 
       playSaved();
-      toast.success(mode === "create" ? "Sales entry saved." : "Sales entry updated.");
+      toast.success(mode === "create" ? t("form.savedToast") : t("form.updatedToast"));
       router.push("/sales");
     });
   }
@@ -136,11 +140,11 @@ export function SalesEntryForm({
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-base">Branch</FormLabel>
+                <FormLabel className="text-base">{t("form.branch")}</FormLabel>
                 <Select value={field.value} onValueChange={field.onChange}>
                   <FormControl>
                     <SelectTrigger className="h-12 w-full text-base">
-                      <SelectValue placeholder="Select a branch" />
+                      <SelectValue placeholder={t("form.selectBranch")} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -157,9 +161,9 @@ export function SalesEntryForm({
           />
         ) : (
           <div>
-            <Label className="text-base">Branch</Label>
+            <Label className="text-base">{t("form.branch")}</Label>
             <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted px-3 text-base">
-              {branches[0]?.name ?? "No branch assigned"}
+              {branches[0]?.name ?? tCommon("noBranchAssigned")}
             </div>
           </div>
         )}
@@ -169,7 +173,7 @@ export function SalesEntryForm({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Date</FormLabel>
+              <FormLabel className="text-base">{t("form.date")}</FormLabel>
               <FormControl>
                 <Input type="date" max={todayDateKey()} className="h-12 text-base" {...field} />
               </FormControl>
@@ -179,7 +183,7 @@ export function SalesEntryForm({
         />
 
         <div className="space-y-3">
-          <Label className="text-base">Sales by Currency</Label>
+          <Label className="text-base">{t("form.salesByCurrency")}</Label>
 
           {currencyFields.map((field, index) => (
             <div key={field.id} className="space-y-2 rounded-lg border border-input p-3">
@@ -193,7 +197,7 @@ export function SalesEntryForm({
                         <Select value={field.value} onValueChange={field.onChange}>
                           <FormControl>
                             <SelectTrigger className="h-11 w-full text-base">
-                              <SelectValue placeholder="Currency" />
+                              <SelectValue placeholder={t("form.currencyPlaceholder")} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -219,7 +223,7 @@ export function SalesEntryForm({
                             inputMode="decimal"
                             step="0.01"
                             min="0"
-                            placeholder="0.00"
+                            placeholder={t("form.amountPlaceholder")}
                             className="h-11 text-base"
                             {...field}
                             value={field.value as number | string}
@@ -236,7 +240,7 @@ export function SalesEntryForm({
                   size="icon"
                   onClick={() => removeCurrency(index)}
                   disabled={currencyFields.length === 1}
-                  aria-label="Remove currency"
+                  aria-label={t("form.removeCurrencyAria")}
                 >
                   <X className="size-4" />
                 </Button>
@@ -260,11 +264,11 @@ export function SalesEntryForm({
             }
           >
             <Plus className="size-4" />
-            Add currency
+            {t("form.addCurrency")}
           </Button>
 
           <div className="flex items-center justify-between rounded-lg bg-primary/10 px-4 py-3">
-            <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
+            <span className="text-sm font-medium text-muted-foreground">{t("form.grandTotal")}</span>
             <span className="text-2xl font-semibold tracking-tight text-primary">
               {formatIls(grandTotal)}
             </span>
@@ -276,7 +280,7 @@ export function SalesEntryForm({
           name="orderCount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Orders</FormLabel>
+              <FormLabel className="text-base">{t("form.orders")}</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -299,9 +303,14 @@ export function SalesEntryForm({
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Notes (optional)</FormLabel>
+              <FormLabel className="text-base">{t("form.notesOptional")}</FormLabel>
               <FormControl>
-                <Textarea rows={3} className="text-base" placeholder="Anything worth noting…" {...field} />
+                <Textarea
+                  rows={3}
+                  className="text-base"
+                  placeholder={t("form.notesPlaceholder")}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -316,7 +325,7 @@ export function SalesEntryForm({
                 href={`/sales/${duplicate.entryId}/edit`}
                 className="font-medium text-primary hover:underline"
               >
-                Edit the existing entry →
+                {t("form.editExistingEntry")}
               </Link>
             )}
           </div>
@@ -325,12 +334,10 @@ export function SalesEntryForm({
         <Collapsible open={breakdownOpen} onOpenChange={setBreakdownOpen}>
           <Card>
             <CollapsibleTrigger asChild>
-              <button type="button" className="flex w-full items-center justify-between p-4 text-left">
+              <button type="button" className="flex w-full items-center justify-between p-4 text-start">
                 <div>
-                  <p className="font-medium">Product breakdown</p>
-                  <p className="text-sm text-muted-foreground">
-                    Optional — break down the total by product
-                  </p>
+                  <p className="font-medium">{t("form.productBreakdown")}</p>
+                  <p className="text-sm text-muted-foreground">{t("form.productBreakdownDesc")}</p>
                 </div>
                 <ChevronDown
                   className={cn("size-5 shrink-0 transition-transform", breakdownOpen && "rotate-180")}
@@ -340,7 +347,7 @@ export function SalesEntryForm({
             <CollapsibleContent>
               <CardContent className="space-y-3 pt-0">
                 {fields.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No products added yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("form.noProductsAdded")}</p>
                 )}
                 {fields.map((field, index) => (
                   <div key={field.id} className="flex items-end gap-2">
@@ -349,17 +356,17 @@ export function SalesEntryForm({
                       name={`lineItems.${index}.productId`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          {index === 0 && <FormLabel>Product</FormLabel>}
+                          {index === 0 && <FormLabel>{t("form.product")}</FormLabel>}
                           <Select value={field.value} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger className="h-11 w-full">
-                                <SelectValue placeholder="Product" />
+                                <SelectValue placeholder={t("form.productPlaceholder")} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
                               {products.map((p) => (
                                 <SelectItem key={p.id} value={p.id}>
-                                  {p.name}
+                                  {localizedName(p.name, p.nameAr, locale)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -373,7 +380,7 @@ export function SalesEntryForm({
                       name={`lineItems.${index}.quantity`}
                       render={({ field }) => (
                         <FormItem className="w-20">
-                          {index === 0 && <FormLabel>Qty</FormLabel>}
+                          {index === 0 && <FormLabel>{t("form.qty")}</FormLabel>}
                           <FormControl>
                             <Input
                               type="number"
@@ -394,7 +401,7 @@ export function SalesEntryForm({
                       variant="ghost"
                       size="icon"
                       onClick={() => remove(index)}
-                      aria-label="Remove product"
+                      aria-label={t("form.removeProductAria")}
                     >
                       <X className="size-4" />
                     </Button>
@@ -408,12 +415,10 @@ export function SalesEntryForm({
                   className="w-full"
                 >
                   <Plus className="size-4" />
-                  Add product
+                  {t("form.addProduct")}
                 </Button>
                 {products.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    No products are configured for this branch yet.
-                  </p>
+                  <p className="text-xs text-muted-foreground">{t("form.noProductsConfigured")}</p>
                 )}
               </CardContent>
             </CollapsibleContent>
@@ -422,7 +427,7 @@ export function SalesEntryForm({
 
         <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={isPending}>
           {isPending && <Loader2 className="size-4 animate-spin" />}
-          {mode === "create" ? "Save entry" : "Update entry"}
+          {mode === "create" ? t("form.saveEntry") : t("form.updateEntry")}
         </Button>
       </form>
     </Form>

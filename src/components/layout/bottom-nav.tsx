@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { navItems } from "@/config/nav";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch overflow-x-auto border-t border-border bg-sidebar md:hidden">
@@ -24,7 +26,7 @@ export function BottomNav() {
             )}
           >
             <Icon className="size-5" />
-            <span className="whitespace-nowrap">{item.title}</span>
+            <span className="whitespace-nowrap">{t(item.titleKey)}</span>
           </Link>
         );
       })}

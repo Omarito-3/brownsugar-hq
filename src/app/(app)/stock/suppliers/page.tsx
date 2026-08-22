@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -12,13 +13,14 @@ export default async function SuppliersPage() {
     redirect("/stock");
   }
 
+  const t = await getTranslations("stock.suppliersPage");
   const suppliers = await getSuppliersManaged();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">Suppliers</h1>
-        <p className="mt-1 text-muted-foreground">Manage suppliers used for stock purchases.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <SuppliersManager suppliers={suppliers} />

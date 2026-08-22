@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -90,12 +91,17 @@ async function applyMovementTx(
 }
 
 export async function recordMovement(input: MovementInput): Promise<StockActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tv, tc] = await Promise.all([
+    auth(),
+    getTranslations("stock.actions"),
+    getTranslations("stock.validation"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
-  const parsed = movementSchema.safeParse(input);
+  const parsed = movementSchema(tv).safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
   }
 
   const data = parsed.data;
@@ -105,7 +111,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
   try {
     if (data.type === "TRANSFER") {
       if (role !== "OWNER") {
-        return { ok: false, error: "Only owners can record transfers between branches." };
+        return { ok: false, error: t("ownerOnlyTransfer") };
       }
 
       const fromBranchId = data.fromBranchId!;
@@ -138,7 +144,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
     }
 
     const branchId = role === "OWNER" ? data.branchId! : userBranchId;
-    if (!branchId) return { ok: false, error: "Your account has no branch assigned." };
+    if (!branchId) return { ok: false, error: t("noBranchAssigned") };
 
     // Narrowed to a local const: property narrowing on `data.type` doesn't
     // survive into the transaction closure below, but a local const does.
@@ -192,8 +198,8 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
     return { ok: true, expenseCreated };
   } catch (err) {
     if (err instanceof InsufficientStockError) {
-      return { ok: false, error: err.message };
+      return { ok: false, error: t("insufficientStock") };
     }
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: tc("somethingWrong") };
   }
 }

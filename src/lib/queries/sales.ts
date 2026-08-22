@@ -171,11 +171,11 @@ export async function getTodayPerBranch(branchId?: string) {
 export async function getBranchProductsMap() {
   const rows = await prisma.branchProduct.findMany({
     where: { isAvailable: true, product: { isActive: true } },
-    include: { product: { select: { id: true, name: true } } },
+    include: { product: { select: { id: true, name: true, nameAr: true } } },
     orderBy: { product: { name: "asc" } },
   });
 
-  const map: Record<string, { id: string; name: string }[]> = {};
+  const map: Record<string, { id: string; name: string; nameAr: string | null }[]> = {};
   for (const row of rows) {
     (map[row.branchId] ??= []).push(row.product);
   }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -55,17 +56,22 @@ async function resolveCurrencyAmounts(
 }
 
 export async function createSalesEntry(input: SalesEntryInput): Promise<SalesActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("sales.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
-  const parsed = salesEntrySchema.safeParse(input);
+  const tv = await getTranslations("sales.validation");
+  const parsed = salesEntrySchema(tv).safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
   }
 
   const { role, branchId: userBranchId } = session.user;
   const branchId = role === "OWNER" ? parsed.data.branchId : userBranchId;
-  if (!branchId) return { ok: false, error: "Your account has no branch assigned." };
+  if (!branchId) return { ok: false, error: t("noBranchAssigned") };
 
   const date = toDate(parsed.data.date);
 
@@ -76,7 +82,7 @@ export async function createSalesEntry(input: SalesEntryInput): Promise<SalesAct
   if (existing) {
     return {
       ok: false,
-      error: "Entry for this branch and date already exists.",
+      error: t("duplicateEntry"),
       duplicateEntryId: existing.id,
     };
   }
@@ -114,11 +120,11 @@ export async function createSalesEntry(input: SalesEntryInput): Promise<SalesAct
       });
       return {
         ok: false,
-        error: "Entry for this branch and date already exists.",
+        error: t("duplicateEntry"),
         duplicateEntryId: dup?.id,
       };
     }
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: tc("somethingWrong") };
   }
 }
 
@@ -126,22 +132,27 @@ export async function updateSalesEntry(
   id: string,
   input: SalesEntryInput
 ): Promise<SalesActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("sales.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
   const existingEntry = await prisma.salesEntry.findUnique({
     where: { id },
     select: { branchId: true },
   });
-  if (!existingEntry) return { ok: false, error: "Entry not found." };
+  if (!existingEntry) return { ok: false, error: t("entryNotFound") };
 
   const { role, branchId: userBranchId } = session.user;
   const canEdit = role === "OWNER" || existingEntry.branchId === userBranchId;
-  if (!canEdit) return { ok: false, error: "You don't have permission to edit this entry." };
+  if (!canEdit) return { ok: false, error: t("noPermissionEdit") };
 
-  const parsed = salesEntrySchema.safeParse(input);
+  const tv = await getTranslations("sales.validation");
+  const parsed = salesEntrySchema(tv).safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
   }
 
   const branchId = role === "OWNER" ? parsed.data.branchId : userBranchId!;
@@ -154,7 +165,7 @@ export async function updateSalesEntry(
   if (conflicting && conflicting.id !== id) {
     return {
       ok: false,
-      error: "Entry for this branch and date already exists.",
+      error: t("duplicateEntry"),
       duplicateEntryId: conflicting.id,
     };
   }
@@ -190,19 +201,23 @@ export async function updateSalesEntry(
     return { ok: true, id };
   } catch (err) {
     if (isUniqueConstraintError(err)) {
-      return { ok: false, error: "Entry for this branch and date already exists." };
+      return { ok: false, error: t("duplicateEntry") };
     }
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: tc("somethingWrong") };
   }
 }
 
 export async function deleteSalesEntry(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("sales.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
   if (session.user.role !== "OWNER") {
-    return { ok: false, error: "Only owners can delete sales entries." };
+    return { ok: false, error: t("ownerOnlyDelete") };
   }
 
   await prisma.$transaction([

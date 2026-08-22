@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -24,17 +25,22 @@ async function resolveAmountIls(
 }
 
 export async function createExpense(input: ExpenseInput): Promise<ExpenseActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("finance.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
-  const parsed = expenseSchema.safeParse(input);
+  const tv = await getTranslations("finance.validation");
+  const parsed = expenseSchema(tv).safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
   }
 
   const { role, branchId: userBranchId } = session.user;
   const branchId = role === "OWNER" ? parsed.data.branchId : userBranchId;
-  if (!branchId) return { ok: false, error: "Your account has no branch assigned." };
+  if (!branchId) return { ok: false, error: t("noBranchAssigned") };
 
   const resolved = await resolveAmountIls(parsed.data.currencyCode, parsed.data.amountOriginal);
   if (!resolved.ok) return resolved;
@@ -61,19 +67,24 @@ export async function createExpense(input: ExpenseInput): Promise<ExpenseActionR
 }
 
 export async function updateExpense(id: string, input: ExpenseInput): Promise<ExpenseActionResult> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("finance.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
   const existing = await prisma.expense.findUnique({ where: { id }, select: { branchId: true } });
-  if (!existing) return { ok: false, error: "Expense not found." };
+  if (!existing) return { ok: false, error: t("expenseNotFound") };
 
   const { role, branchId: userBranchId } = session.user;
   const canEdit = role === "OWNER" || existing.branchId === userBranchId;
-  if (!canEdit) return { ok: false, error: "You don't have permission to edit this expense." };
+  if (!canEdit) return { ok: false, error: t("noPermissionEdit") };
 
-  const parsed = expenseSchema.safeParse(input);
+  const tv = await getTranslations("finance.validation");
+  const parsed = expenseSchema(tv).safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+    return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
   }
 
   const branchId = role === "OWNER" ? parsed.data.branchId : userBranchId!;
@@ -103,14 +114,18 @@ export async function updateExpense(id: string, input: ExpenseInput): Promise<Ex
 export async function deleteExpense(
   id: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const session = await auth();
-  if (!session?.user) return { ok: false, error: "Not authenticated." };
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("finance.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
   const existing = await prisma.expense.findUnique({ where: { id }, select: { id: true } });
-  if (!existing) return { ok: false, error: "Expense not found." };
+  if (!existing) return { ok: false, error: t("expenseNotFound") };
 
   if (session.user.role !== "OWNER") {
-    return { ok: false, error: "Only owners can delete expenses." };
+    return { ok: false, error: t("ownerOnlyDelete") };
   }
 
   await prisma.expense.delete({ where: { id } });

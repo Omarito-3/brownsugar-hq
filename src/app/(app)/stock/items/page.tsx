@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -12,13 +13,14 @@ export default async function StockItemsPage() {
     redirect("/stock");
   }
 
+  const t = await getTranslations("stock.itemsPage");
   const items = await getStockItemsManaged();
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">Stock Items</h1>
-        <p className="mt-1 text-muted-foreground">Manage the items tracked across branches.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <ItemsManager items={items} />

@@ -1,3 +1,7 @@
+"use client";
+
+import { useLocale, useTranslations } from "next-intl";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,54 +13,59 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FadeIn } from "@/components/motion/fade-in";
-import { formatDate, formatIls } from "@/lib/format";
-import { UNIT_LABELS, MOVEMENT_TYPE_LABELS, ADJUSTMENT_DIRECTION_LABELS } from "@/lib/stock-labels";
+import { formatDate, formatIls, localizedName } from "@/lib/format";
+import { unitLabel, movementTypeLabel, adjustmentDirectionLabel } from "@/lib/stock-labels";
 import type { getRecentMovements } from "@/lib/queries/stock";
 
 type RecentMovements = Awaited<ReturnType<typeof getRecentMovements>>;
 
 export function RecentMovementsTable({ movements }: { movements: RecentMovements }) {
+  const t = useTranslations();
+  const locale = useLocale();
+
   return (
     <FadeIn delay={0.25}>
       <Card>
         <CardHeader>
-          <CardTitle>Recent Movements</CardTitle>
+          <CardTitle>{t("stock.recentMovements")}</CardTitle>
         </CardHeader>
         <CardContent>
           {movements.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No stock movements recorded yet.
+              {t("stock.noMovementsYet")}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Branch</TableHead>
-                    <TableHead>Item</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Cost</TableHead>
+                    <TableHead>{t("stock.columnDate")}</TableHead>
+                    <TableHead>{t("stock.columnBranch")}</TableHead>
+                    <TableHead>{t("stock.columnItem")}</TableHead>
+                    <TableHead>{t("stock.columnType")}</TableHead>
+                    <TableHead className="text-end">{t("stock.columnQuantity")}</TableHead>
+                    <TableHead className="text-end">{t("stock.columnCost")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {movements.map((m) => (
                     <TableRow key={m.id}>
-                      <TableCell className="text-muted-foreground">{formatDate(m.date)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(m.date, locale)}
+                      </TableCell>
                       <TableCell className="font-medium">{m.branchName}</TableCell>
-                      <TableCell>{m.itemName}</TableCell>
+                      <TableCell>{localizedName(m.itemName, m.itemNameAr, locale)}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {MOVEMENT_TYPE_LABELS[m.type] ?? m.type}
-                          {m.direction ? ` (${ADJUSTMENT_DIRECTION_LABELS[m.direction] ?? m.direction})` : ""}
+                          {movementTypeLabel(t, m.type)}
+                          {m.direction ? ` (${adjustmentDirectionLabel(t, m.direction)})` : ""}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {m.quantity} {UNIT_LABELS[m.unit] ?? m.unit}
+                      <TableCell className="text-end tabular-nums">
+                        {m.quantity} {unitLabel(t, m.unit)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {m.costIls != null ? formatIls(m.costIls) : "—"}
+                      <TableCell className="text-end tabular-nums">
+                        {m.costIls != null ? formatIls(m.costIls) : t("common.dash")}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -10,13 +11,14 @@ export default async function CurrenciesSettingsPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role !== "OWNER") redirect("/settings");
 
+  const t = await getTranslations("settings.currenciesPage");
   const currencies = await getCurrenciesWithMeta();
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">Currencies</h1>
-        <p className="mt-1 text-muted-foreground">Manage exchange rates used across the app.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
         <CurrenciesTable currencies={currencies} />
