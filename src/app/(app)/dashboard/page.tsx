@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
-import { Wallet } from "lucide-react";
+import { Receipt, TrendingUp, Wallet } from "lucide-react";
 
 import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
-import { MetricCard } from "@/components/sales/metric-cards";
+import { MetricCard } from "@/components/shared/metric-card";
 import { BranchTodayCards } from "@/components/sales/branch-today-cards";
 import { RevenueLineChart } from "@/components/charts/revenue-line-chart";
 import { formatIls } from "@/lib/format";
 import { getWeeklyMetrics, getDailyRevenueSeries, getTodayPerBranch } from "@/lib/queries/sales";
+import { getFinanceMetrics } from "@/lib/queries/finance";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -17,11 +18,14 @@ export default async function DashboardPage() {
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [metrics, { series, branches }, todayPerBranch] = await Promise.all([
+  const [weeklyMetrics, financeMetrics, { series, branches }, todayPerBranch] = await Promise.all([
     getWeeklyMetrics(scopedBranchId),
+    getFinanceMetrics(scopedBranchId),
     getDailyRevenueSeries(scopedBranchId, 30),
     getTodayPerBranch(scopedBranchId),
   ]);
+
+  const isProfit = financeMetrics.netProfit >= 0;
 
   return (
     <div className="space-y-8">
@@ -30,23 +34,36 @@ export default async function DashboardPage() {
         <p className="mt-1 text-muted-foreground">A daily overview across all branches.</p>
       </FadeIn>
 
-      <div className="max-w-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MetricCard
+          label="Net Profit This Month"
+          value={formatIls(financeMetrics.netProfit)}
+          icon={TrendingUp}
+          delay={0}
+          valueClassName={isProfit ? "text-emerald-500" : "text-destructive"}
+        />
         <MetricCard
           label="This Week's Revenue"
-          value={formatIls(metrics.totalRevenue)}
+          value={formatIls(weeklyMetrics.totalRevenue)}
           icon={Wallet}
-          delay={0}
+          delay={0.05}
+        />
+        <MetricCard
+          label="Expenses This Month"
+          value={formatIls(financeMetrics.totalExpenses)}
+          icon={Receipt}
+          delay={0.1}
         />
       </div>
 
       <div className="space-y-3">
-        <FadeIn delay={0.05}>
+        <FadeIn delay={0.15}>
           <h2 className="text-lg font-medium">Today by Branch</h2>
         </FadeIn>
         <BranchTodayCards data={todayPerBranch} />
       </div>
 
-      <FadeIn delay={0.1}>
+      <FadeIn delay={0.2}>
         <Card>
           <CardHeader>
             <CardTitle>Daily Revenue — Last 30 Days</CardTitle>

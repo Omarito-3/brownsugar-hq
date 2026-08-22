@@ -3,12 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
 import { FadeIn } from "@/components/motion/fade-in";
-import {
-  getBranchesForUser,
-  getBranchProductsMap,
-  getCurrencies,
-  getSalesEntryForEdit,
-} from "@/lib/queries/sales";
+import { getBranchProductsMap, getSalesEntryForEdit } from "@/lib/queries/sales";
+import { getBranchesForUser, getCurrencies } from "@/lib/queries/shared";
 import type { SalesEntryFormInput } from "@/lib/validations/sales";
 
 export default async function EditSalesEntryPage({

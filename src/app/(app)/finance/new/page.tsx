@@ -1,46 +1,44 @@
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
-import { SalesEntryForm } from "@/components/sales/sales-entry-form";
+import { ExpenseForm } from "@/components/finance/expense-form";
 import { FadeIn } from "@/components/motion/fade-in";
-import { getBranchProductsMap } from "@/lib/queries/sales";
 import { getBranchesForUser, getCurrencies } from "@/lib/queries/shared";
 import { todayDateKey } from "@/lib/format";
-import type { SalesEntryFormInput } from "@/lib/validations/sales";
+import type { ExpenseFormInput } from "@/lib/validations/finance";
 
-export default async function NewSalesEntryPage() {
+export default async function NewExpensePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [branches, branchProductsMap, currencies] = await Promise.all([
+  const [branches, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),
-    getBranchProductsMap(),
     getCurrencies(),
   ]);
 
-  const defaultValues: SalesEntryFormInput = {
+  const defaultValues: ExpenseFormInput = {
     branchId: isOwner ? "" : (branches[0]?.id ?? ""),
     date: todayDateKey(),
-    orderCount: "",
+    category: "OTHER",
+    amountOriginal: "",
+    currencyCode: "ILS",
     notes: "",
-    currencyAmounts: [{ currencyCode: "ILS", amountOriginal: "" }],
-    lineItems: [],
+    receiptUrl: "",
   };
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <FadeIn>
-        <h1 className="text-3xl font-semibold tracking-tight">New Sales Entry</h1>
-        <p className="mt-1 text-muted-foreground">Log today&apos;s totals for a branch.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">New Expense</h1>
+        <p className="mt-1 text-muted-foreground">Log an expense for a branch.</p>
       </FadeIn>
       <FadeIn delay={0.05}>
-        <SalesEntryForm
+        <ExpenseForm
           mode="create"
           branches={branches}
-          branchProductsMap={branchProductsMap}
           currencies={currencies}
           isOwner={isOwner}
           defaultValues={defaultValues}

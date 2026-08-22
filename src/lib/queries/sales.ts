@@ -168,14 +168,6 @@ export async function getTodayPerBranch(branchId?: string) {
   });
 }
 
-export async function getBranchesForUser(scopedBranchId?: string) {
-  return prisma.branch.findMany({
-    where: scopedBranchId ? { id: scopedBranchId } : { isActive: true },
-    select: { id: true, name: true },
-    orderBy: { name: "asc" },
-  });
-}
-
 export async function getBranchProductsMap() {
   const rows = await prisma.branchProduct.findMany({
     where: { isAvailable: true, product: { isActive: true } },
@@ -213,11 +205,6 @@ export async function getSalesEntryForEdit(id: string) {
       amountOriginal: toNumber(c.amountOriginal),
     })),
   };
-}
-
-export async function getCurrencies() {
-  const currencies = await prisma.currency.findMany({ orderBy: { code: "asc" } });
-  return currencies.map((c) => ({ code: c.code, rateToIls: toNumber(c.rateToIls) }));
 }
 
 export async function findEntryByBranchAndDate(branchId: string, dateKey: string) {
