@@ -193,7 +193,10 @@ export async function getBranchProductsMap() {
 export async function getSalesEntryForEdit(id: string) {
   const entry = await prisma.salesEntry.findUnique({
     where: { id },
-    include: { lineItems: { select: { productId: true, quantity: true } } },
+    include: {
+      lineItems: { select: { productId: true, quantity: true } },
+      currencyAmounts: { select: { currencyCode: true, amountOriginal: true } },
+    },
   });
   if (!entry) return null;
 
@@ -205,7 +208,16 @@ export async function getSalesEntryForEdit(id: string) {
     orderCount: entry.orderCount,
     notes: entry.notes ?? "",
     lineItems: entry.lineItems,
+    currencyAmounts: entry.currencyAmounts.map((c) => ({
+      currencyCode: c.currencyCode,
+      amountOriginal: toNumber(c.amountOriginal),
+    })),
   };
+}
+
+export async function getCurrencies() {
+  const currencies = await prisma.currency.findMany({ orderBy: { code: "asc" } });
+  return currencies.map((c) => ({ code: c.code, rateToIls: toNumber(c.rateToIls) }));
 }
 
 export async function findEntryByBranchAndDate(branchId: string, dateKey: string) {

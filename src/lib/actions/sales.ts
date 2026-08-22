@@ -5,7 +5,12 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
-import { salesEntrySchema, type SalesEntryInput } from "@/lib/validations/sales";
+import { toNumber, roundCurrency } from "@/lib/format";
+import {
+  salesEntrySchema,
+  type SalesEntryInput,
+  type SalesCurrencyAmountInput,
+} from "@/lib/validations/sales";
 
 export type SalesActionResult =
   | { ok: true; id: string }
@@ -17,6 +22,36 @@ function toDate(dateKey: string): Date {
 
 function isUniqueConstraintError(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+}
+
+type ResolvedCurrencyAmounts = {
+  rows: { currencyCode: string; amountOriginal: number; amountIls: number }[];
+  totalIls: number;
+};
+
+/** Server is the source of truth for exchange rates — never trust a client-submitted amountIls. */
+async function resolveCurrencyAmounts(
+  currencyAmounts: SalesCurrencyAmountInput[]
+): Promise<{ ok: true; data: ResolvedCurrencyAmounts } | { ok: false; error: string }> {
+  const codes = currencyAmounts.map((c) => c.currencyCode);
+  const currencies = await prisma.currency.findMany({ where: { code: { in: codes } } });
+  const rateByCode = new Map(currencies.map((c) => [c.code, toNumber(c.rateToIls)]));
+
+  const rows: ResolvedCurrencyAmounts["rows"] = [];
+  for (const amount of currencyAmounts) {
+    const rate = rateByCode.get(amount.currencyCode);
+    if (rate == null) {
+      return { ok: false, error: `Unknown currency: ${amount.currencyCode}` };
+    }
+    rows.push({
+      currencyCode: amount.currencyCode,
+      amountOriginal: amount.amountOriginal,
+      amountIls: roundCurrency(amount.amountOriginal * rate),
+    });
+  }
+
+  const totalIls = roundCurrency(rows.reduce((sum, r) => sum + r.amountIls, 0));
+  return { ok: true, data: { rows, totalIls } };
 }
 
 export async function createSalesEntry(input: SalesEntryInput): Promise<SalesActionResult> {
@@ -46,15 +81,19 @@ export async function createSalesEntry(input: SalesEntryInput): Promise<SalesAct
     };
   }
 
+  const resolved = await resolveCurrencyAmounts(parsed.data.currencyAmounts);
+  if (!resolved.ok) return resolved;
+
   try {
     const entry = await prisma.salesEntry.create({
       data: {
         branchId,
         date,
-        totalIls: parsed.data.totalIls,
+        totalIls: resolved.data.totalIls,
         orderCount: parsed.data.orderCount,
         notes: parsed.data.notes || null,
         enteredById: session.user.id,
+        currencyAmounts: { create: resolved.data.rows },
         lineItems: {
           create: parsed.data.lineItems.map((li) => ({
             productId: li.productId,
@@ -120,17 +159,22 @@ export async function updateSalesEntry(
     };
   }
 
+  const resolved = await resolveCurrencyAmounts(parsed.data.currencyAmounts);
+  if (!resolved.ok) return resolved;
+
   try {
     await prisma.$transaction([
       prisma.salesLineItem.deleteMany({ where: { salesEntryId: id } }),
+      prisma.salesCurrencyAmount.deleteMany({ where: { salesEntryId: id } }),
       prisma.salesEntry.update({
         where: { id },
         data: {
           branchId,
           date,
-          totalIls: parsed.data.totalIls,
+          totalIls: resolved.data.totalIls,
           orderCount: parsed.data.orderCount,
           notes: parsed.data.notes || null,
+          currencyAmounts: { create: resolved.data.rows },
           lineItems: {
             create: parsed.data.lineItems.map((li) => ({
               productId: li.productId,
@@ -163,6 +207,7 @@ export async function deleteSalesEntry(
 
   await prisma.$transaction([
     prisma.salesLineItem.deleteMany({ where: { salesEntryId: id } }),
+    prisma.salesCurrencyAmount.deleteMany({ where: { salesEntryId: id } }),
     prisma.salesEntry.delete({ where: { id } }),
   ]);
 

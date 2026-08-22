@@ -57,25 +57,25 @@ model User {
 }
 
 model Product {
-  id            String          @id @default(cuid())
-  name          String
-  nameAr        String?
-  category      ProductCategory
-  basePriceIls  Decimal         @db.Decimal(10, 2)
-  costIls       Decimal?        @db.Decimal(10, 2)
-  isActive      Boolean         @default(true)
-  createdAt     DateTime        @default(now())
+  id           String          @id @default(cuid())
+  name         String
+  nameAr       String?
+  category     ProductCategory
+  basePriceIls Decimal         @db.Decimal(10, 2)
+  costIls      Decimal?        @db.Decimal(10, 2)
+  isActive     Boolean         @default(true)
+  createdAt    DateTime        @default(now())
 
-  branchProducts  BranchProduct[]
-  salesLineItems  SalesLineItem[]
+  branchProducts BranchProduct[]
+  salesLineItems SalesLineItem[]
 }
 
 model BranchProduct {
-  id                String   @id @default(cuid())
-  branchId          String
-  productId         String
-  isAvailable       Boolean  @default(true)
-  priceOverrideIls  Decimal? @db.Decimal(10, 2)
+  id               String   @id @default(cuid())
+  branchId         String
+  productId        String
+  isAvailable      Boolean  @default(true)
+  priceOverrideIls Decimal? @db.Decimal(10, 2)
 
   branch  Branch  @relation(fields: [branchId], references: [id])
   product Product @relation(fields: [productId], references: [id])
@@ -88,22 +88,24 @@ model Currency {
   rateToIls Decimal  @db.Decimal(10, 4)
   updatedAt DateTime @updatedAt
 
-  expenses Expense[]
+  expenses             Expense[]
+  salesCurrencyAmounts SalesCurrencyAmount[]
 }
 
 model SalesEntry {
-  id           String   @id @default(cuid())
-  branchId     String
-  date         DateTime @db.Date
-  totalIls     Decimal  @db.Decimal(10, 2)
-  orderCount   Int
-  notes        String?
-  enteredById  String
-  createdAt    DateTime @default(now())
+  id          String   @id @default(cuid())
+  branchId    String
+  date        DateTime @db.Date
+  totalIls    Decimal  @db.Decimal(10, 2)
+  orderCount  Int
+  notes       String?
+  enteredById String
+  createdAt   DateTime @default(now())
 
-  branch      Branch          @relation(fields: [branchId], references: [id])
-  enteredBy   User            @relation(fields: [enteredById], references: [id])
-  lineItems   SalesLineItem[]
+  branch          Branch                @relation(fields: [branchId], references: [id])
+  enteredBy       User                  @relation(fields: [enteredById], references: [id])
+  lineItems       SalesLineItem[]
+  currencyAmounts SalesCurrencyAmount[]
 
   @@unique([branchId, date])
 }
@@ -118,18 +120,31 @@ model SalesLineItem {
   product    Product    @relation(fields: [productId], references: [id])
 }
 
+model SalesCurrencyAmount {
+  id             String  @id @default(cuid())
+  salesEntryId   String
+  currencyCode   String
+  amountOriginal Decimal @db.Decimal(10, 2)
+  amountIls      Decimal @db.Decimal(10, 2)
+
+  salesEntry SalesEntry @relation(fields: [salesEntryId], references: [id])
+  currency   Currency   @relation(fields: [currencyCode], references: [code])
+
+  @@unique([salesEntryId, currencyCode])
+}
+
 model Expense {
-  id              String          @id @default(cuid())
-  branchId        String
-  date            DateTime        @db.Date
-  amountOriginal  Decimal         @db.Decimal(10, 2)
-  currencyCode    String
-  amountIls       Decimal         @db.Decimal(10, 2)
-  category        ExpenseCategory
-  receiptUrl      String?
-  notes           String?
-  enteredById     String
-  createdAt       DateTime        @default(now())
+  id             String          @id @default(cuid())
+  branchId       String
+  date           DateTime        @db.Date
+  amountOriginal Decimal         @db.Decimal(10, 2)
+  currencyCode   String
+  amountIls      Decimal         @db.Decimal(10, 2)
+  category       ExpenseCategory
+  receiptUrl     String?
+  notes          String?
+  enteredById    String
+  createdAt      DateTime        @default(now())
 
   branch    Branch   @relation(fields: [branchId], references: [id])
   currency  Currency @relation(fields: [currencyCode], references: [code])

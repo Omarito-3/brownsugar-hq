@@ -4,6 +4,11 @@ export function toNumber(value: unknown): number {
   return Number(value);
 }
 
+/** Round to 2 decimal places, avoiding floating-point drift before writing Decimal(10,2) columns. */
+export function roundCurrency(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 const ilsFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "ILS",

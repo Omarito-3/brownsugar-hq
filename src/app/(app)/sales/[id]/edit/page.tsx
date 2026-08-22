@@ -6,6 +6,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 import {
   getBranchesForUser,
   getBranchProductsMap,
+  getCurrencies,
   getSalesEntryForEdit,
 } from "@/lib/queries/sales";
 import type { SalesEntryFormInput } from "@/lib/validations/sales";
@@ -29,17 +30,21 @@ export default async function EditSalesEntryPage({
 
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [branches, branchProductsMap] = await Promise.all([
+  const [branches, branchProductsMap, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),
     getBranchProductsMap(),
+    getCurrencies(),
   ]);
 
   const defaultValues: SalesEntryFormInput = {
     branchId: entry.branchId,
     date: entry.date,
-    totalIls: entry.totalIls,
     orderCount: entry.orderCount,
     notes: entry.notes,
+    currencyAmounts:
+      entry.currencyAmounts.length > 0
+        ? entry.currencyAmounts
+        : [{ currencyCode: "ILS", amountOriginal: "" }],
     lineItems: entry.lineItems,
   };
 
@@ -55,6 +60,7 @@ export default async function EditSalesEntryPage({
           entryId={entry.id}
           branches={branches}
           branchProductsMap={branchProductsMap}
+          currencies={currencies}
           isOwner={isOwner}
           defaultValues={defaultValues}
         />

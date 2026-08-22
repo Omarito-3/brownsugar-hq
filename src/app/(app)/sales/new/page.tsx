@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
 import { FadeIn } from "@/components/motion/fade-in";
-import { getBranchesForUser, getBranchProductsMap } from "@/lib/queries/sales";
+import { getBranchesForUser, getBranchProductsMap, getCurrencies } from "@/lib/queries/sales";
 import { todayDateKey } from "@/lib/format";
 import type { SalesEntryFormInput } from "@/lib/validations/sales";
 
@@ -14,17 +14,18 @@ export default async function NewSalesEntryPage() {
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [branches, branchProductsMap] = await Promise.all([
+  const [branches, branchProductsMap, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),
     getBranchProductsMap(),
+    getCurrencies(),
   ]);
 
   const defaultValues: SalesEntryFormInput = {
     branchId: isOwner ? "" : (branches[0]?.id ?? ""),
     date: todayDateKey(),
-    totalIls: "",
     orderCount: "",
     notes: "",
+    currencyAmounts: [{ currencyCode: "ILS", amountOriginal: "" }],
     lineItems: [],
   };
 
@@ -39,6 +40,7 @@ export default async function NewSalesEntryPage() {
           mode="create"
           branches={branches}
           branchProductsMap={branchProductsMap}
+          currencies={currencies}
           isOwner={isOwner}
           defaultValues={defaultValues}
         />

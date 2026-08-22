@@ -16,7 +16,7 @@ import {
 import { createSalesEntry, updateSalesEntry } from "@/lib/actions/sales";
 import { useSound } from "@/hooks/use-sound";
 import { cn } from "@/lib/utils";
-import { todayDateKey } from "@/lib/format";
+import { todayDateKey, formatIls, toNumber } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,12 +41,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 type BranchOption = { id: string; name: string };
 type ProductOption = { id: string; name: string };
+type CurrencyOption = { code: string; rateToIls: number };
 
 export function SalesEntryForm({
   mode,
   entryId,
   branches,
   branchProductsMap,
+  currencies,
   isOwner,
   defaultValues,
 }: {
@@ -54,6 +56,7 @@ export function SalesEntryForm({
   entryId?: string;
   branches: BranchOption[];
   branchProductsMap: Record<string, ProductOption[]>;
+  currencies: CurrencyOption[];
   isOwner: boolean;
   defaultValues: SalesEntryFormInput;
 }) {
@@ -69,9 +72,39 @@ export function SalesEntryForm({
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: "lineItems" });
+  const {
+    fields: currencyFields,
+    append: appendCurrency,
+    remove: removeCurrency,
+  } = useFieldArray({ control: form.control, name: "currencyAmounts" });
 
   const selectedBranchId = useWatch({ control: form.control, name: "branchId" });
   const products = branchProductsMap[selectedBranchId] ?? [];
+
+  const watchedCurrencyAmounts = useWatch({ control: form.control, name: "currencyAmounts" }) ?? [];
+  const rateByCode = new Map(currencies.map((c) => [c.code, c.rateToIls]));
+
+  function previewIls(row: { currencyCode?: string; amountOriginal?: unknown } | undefined): number {
+    if (!row) return 0;
+    const rate = rateByCode.get(row.currencyCode ?? "") ?? 0;
+    const amount = toNumber(row.amountOriginal);
+    return Number.isFinite(amount) ? amount * rate : 0;
+  }
+
+  const grandTotal = watchedCurrencyAmounts.reduce(
+    (sum: number, row) => sum + previewIls(row),
+    0
+  );
+
+  const usedCurrencyCodes = new Set(
+    watchedCurrencyAmounts.map((r) => r?.currencyCode).filter((c): c is string => !!c)
+  );
+  const availableToAdd = currencies.filter((c) => !usedCurrencyCodes.has(c.code));
+
+  function optionsForRow(index: number) {
+    const currentCode = watchedCurrencyAmounts[index]?.currencyCode;
+    return currencies.filter((c) => c.code === currentCode || !usedCurrencyCodes.has(c.code));
+  }
 
   function onSubmit(values: SalesEntryInput) {
     setDuplicate(null);
@@ -145,52 +178,121 @@ export function SalesEntryForm({
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="totalIls"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base">Total sales (₪)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className="h-12 text-base"
-                    {...field}
-                    value={field.value as number | string}
+        <div className="space-y-3">
+          <Label className="text-base">Sales by Currency</Label>
+
+          {currencyFields.map((field, index) => (
+            <div key={field.id} className="space-y-2 rounded-lg border border-input p-3">
+              <div className="flex items-start gap-2">
+                <div className="grid flex-1 grid-cols-[6.5rem_1fr] gap-2">
+                  <FormField
+                    control={form.control}
+                    name={`currencyAmounts.${index}.currencyCode`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <FormControl>
+                            <SelectTrigger className="h-11 w-full text-base">
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {optionsForRow(index).map((c) => (
+                              <SelectItem key={c.code} value={c.code} className="text-base">
+                                {c.code}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="orderCount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-base">Orders</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="1"
-                    placeholder="0"
-                    className="h-12 text-base"
-                    {...field}
-                    value={field.value as number | string}
+                  <FormField
+                    control={form.control}
+                    name={`currencyAmounts.${index}.amountOriginal`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            className="h-11 text-base"
+                            {...field}
+                            value={field.value as number | string}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeCurrency(index)}
+                  disabled={currencyFields.length === 1}
+                  aria-label="Remove currency"
+                >
+                  <X className="size-4" />
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                ≈ {formatIls(previewIls(watchedCurrencyAmounts[index]), true)}
+              </p>
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={availableToAdd.length === 0}
+            onClick={() =>
+              appendCurrency({
+                currencyCode: availableToAdd[0]?.code ?? "",
+                amountOriginal: "" as unknown as number,
+              })
+            }
+          >
+            <Plus className="size-4" />
+            Add currency
+          </Button>
+
+          <div className="flex items-center justify-between rounded-lg bg-primary/10 px-4 py-3">
+            <span className="text-sm font-medium text-muted-foreground">Grand Total</span>
+            <span className="text-2xl font-semibold tracking-tight text-primary">
+              {formatIls(grandTotal)}
+            </span>
+          </div>
         </div>
+
+        <FormField
+          control={form.control}
+          name="orderCount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-base">Orders</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  min="1"
+                  placeholder="0"
+                  className="h-12 text-base"
+                  {...field}
+                  value={field.value as number | string}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
