@@ -358,6 +358,107 @@
       "supplierDeleted": "تم حذف المورّد."
     }
   },
+  "employees": {
+    "title": "الموظفون",
+    "subtitle": "الموظفون والمناصب وتكاليف الرواتب عبر الفروع.",
+    "addEmployee": "إضافة موظف",
+    "scheduleLink": "الجدول",
+    "backToEmployees": "العودة إلى الموظفين",
+    "activeEmployees": "الموظفون النشطون",
+    "monthlySalaryCost": "تكلفة الرواتب الشهرية",
+    "laborCostPercent": "نسبة تكلفة العمالة من الإيرادات",
+    "employeesCount": "{count} موظف",
+    "branchCosts": "الموظفون حسب الفرع",
+    "tableTitle": "الموظفون",
+    "noEmployeesYet": "لا يوجد موظفون بعد.",
+    "filterBranch": "الفرع",
+    "allBranches": "جميع الفروع",
+    "filterPosition": "المنصب",
+    "allPositions": "جميع المناصب",
+    "columnName": "الاسم",
+    "columnBranch": "الفرع",
+    "columnPosition": "المنصب",
+    "columnSalary": "الراتب",
+    "columnStartDate": "تاريخ البدء",
+    "columnActive": "نشط",
+    "columnActions": "الإجراءات",
+    "editAria": "تعديل {name}",
+    "deleteAria": "حذف {name}",
+    "deleteTitle": "حذف هذا الموظف؟",
+    "deleteDescription": "سيؤدي هذا إلى حذف {name} نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+    "employeeDeleted": "تم حذف الموظف.",
+    "perMonth": "/شهريًا",
+    "positions": {
+      "BARISTA": "باريستا",
+      "CASHIER": "كاشير",
+      "SHIFT_LEAD": "مسؤول الوردية",
+      "BRANCH_MANAGER": "مدير الفرع",
+      "CLEANER": "عامل نظافة",
+      "OTHER": "أخرى"
+    },
+    "shifts": {
+      "MORNING": "صباحي",
+      "EVENING": "مسائي",
+      "FULL_DAY": "يوم كامل"
+    },
+    "form": {
+      "addTitle": "إضافة موظف",
+      "editTitle": "تعديل الموظف",
+      "name": "الاسم",
+      "namePlaceholder": "مثال: سارة أحمد",
+      "phoneOptional": "الهاتف (اختياري)",
+      "branch": "الفرع",
+      "selectBranch": "اختر فرعًا",
+      "position": "المنصب",
+      "selectPosition": "اختر منصبًا",
+      "salary": "الراتب الشهري (₪)",
+      "startDate": "تاريخ البدء",
+      "notesOptional": "ملاحظات (اختياري)",
+      "notesPlaceholder": "أي شيء يستحق الذكر…",
+      "save": "حفظ الموظف",
+      "savedToast": "تم حفظ الموظف.",
+      "updatedToast": "تم تحديث الموظف."
+    },
+    "validation": {
+      "nameRequired": "الاسم مطلوب",
+      "branchRequired": "الفرع مطلوب",
+      "salaryPositive": "يجب أن يكون أكبر من 0",
+      "invalidDate": "أدخل تاريخًا صحيحًا"
+    },
+    "actions": {
+      "noPermission": "لا تملك صلاحية القيام بذلك.",
+      "employeeNotFound": "الموظف غير موجود.",
+      "employeeHasHistory": "لهذا الموظف سجل ورديات — قم بإلغاء تفعيله بدلاً من حذفه.",
+      "ownerOnlySalary": "يمكن للمالك فقط إنشاء مصروفات الرواتب."
+    },
+    "salary": {
+      "generateButton": "إنشاء مصروفات الرواتب",
+      "dialogTitle": "إنشاء مصروفات الرواتب",
+      "dialogDescription": "ينشئ مصروف راتب واحدًا لكل فرع للشهر المحدد، بناءً على الموظفين النشطين. يتم تخطي الفروع التي أُنشئت لها مصروفات لهذا الشهر مسبقًا.",
+      "monthLabel": "الشهر",
+      "generate": "إنشاء",
+      "resultSummary": "تم إنشاء {created} مصروف(ات)، وتخطي {skipped} فرع(فروع)."
+    },
+    "schedule": {
+      "title": "الجدول الأسبوعي",
+      "subtitle": "تعيين الموظفين للورديات الصباحية أو المسائية أو اليوم الكامل.",
+      "prevWeek": "الأسبوع السابق",
+      "nextWeek": "الأسبوع التالي",
+      "thisWeek": "هذا الأسبوع",
+      "coverageGap": "لا يوجد أحد مجدول",
+      "editAria": "تعديل جدول {branch} في {date}",
+      "dialogTitle": "{branch} — {date}",
+      "noEmployees": "لا يوجد موظفون نشطون في هذا الفرع.",
+      "saveSchedule": "حفظ الجدول",
+      "savedToast": "تم تحديث الجدول.",
+      "none": "بلا",
+      "readOnlyNote": "لديك صلاحية عرض الجدول فقط."
+    },
+    "dashboardCoverage": {
+      "heading": "لا يوجد أحد مجدول اليوم",
+      "description": "لا يوجد طاقم عمل مجدول اليوم في هذه الفروع."
+    }
+  },
   "settings": {
     "title": "الإعدادات",
     "subtitle": "الحساب والمظهر وتفضيلات الصوت.",

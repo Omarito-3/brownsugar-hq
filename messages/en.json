@@ -358,6 +358,107 @@
       "supplierDeleted": "Supplier deleted."
     }
   },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "Staff, positions, and salary costs across branches.",
+    "addEmployee": "Add employee",
+    "scheduleLink": "Schedule",
+    "backToEmployees": "Back to Employees",
+    "activeEmployees": "Active Employees",
+    "monthlySalaryCost": "Monthly Salary Cost",
+    "laborCostPercent": "Labor Cost % of Revenue",
+    "employeesCount": "{count} employees",
+    "branchCosts": "Employees by Branch",
+    "tableTitle": "Employees",
+    "noEmployeesYet": "No employees yet.",
+    "filterBranch": "Branch",
+    "allBranches": "All branches",
+    "filterPosition": "Position",
+    "allPositions": "All positions",
+    "columnName": "Name",
+    "columnBranch": "Branch",
+    "columnPosition": "Position",
+    "columnSalary": "Salary",
+    "columnStartDate": "Start Date",
+    "columnActive": "Active",
+    "columnActions": "Actions",
+    "editAria": "Edit {name}",
+    "deleteAria": "Delete {name}",
+    "deleteTitle": "Delete this employee?",
+    "deleteDescription": "This will permanently delete {name}. This can't be undone.",
+    "employeeDeleted": "Employee deleted.",
+    "perMonth": "/mo",
+    "positions": {
+      "BARISTA": "Barista",
+      "CASHIER": "Cashier",
+      "SHIFT_LEAD": "Shift Lead",
+      "BRANCH_MANAGER": "Branch Manager",
+      "CLEANER": "Cleaner",
+      "OTHER": "Other"
+    },
+    "shifts": {
+      "MORNING": "Morning",
+      "EVENING": "Evening",
+      "FULL_DAY": "Full Day"
+    },
+    "form": {
+      "addTitle": "Add Employee",
+      "editTitle": "Edit Employee",
+      "name": "Name",
+      "namePlaceholder": "e.g. Sara Ahmad",
+      "phoneOptional": "Phone (optional)",
+      "branch": "Branch",
+      "selectBranch": "Select a branch",
+      "position": "Position",
+      "selectPosition": "Select a position",
+      "salary": "Monthly Salary (₪)",
+      "startDate": "Start Date",
+      "notesOptional": "Notes (optional)",
+      "notesPlaceholder": "Anything worth noting…",
+      "save": "Save employee",
+      "savedToast": "Employee saved.",
+      "updatedToast": "Employee updated."
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "branchRequired": "Branch is required",
+      "salaryPositive": "Must be greater than 0",
+      "invalidDate": "Enter a valid date"
+    },
+    "actions": {
+      "noPermission": "You don't have permission to do this.",
+      "employeeNotFound": "Employee not found.",
+      "employeeHasHistory": "This employee has shift history — deactivate instead of deleting.",
+      "ownerOnlySalary": "Only owners can generate salary expenses."
+    },
+    "salary": {
+      "generateButton": "Generate salary expenses",
+      "dialogTitle": "Generate Salary Expenses",
+      "dialogDescription": "Creates one salary expense per branch for the selected month, based on active employees. Branches already generated for that month are skipped.",
+      "monthLabel": "Month",
+      "generate": "Generate",
+      "resultSummary": "{created} expense(s) created, {skipped} branch(es) skipped."
+    },
+    "schedule": {
+      "title": "Weekly Schedule",
+      "subtitle": "Assign employees to morning, evening, or full-day shifts.",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "thisWeek": "This week",
+      "coverageGap": "No one scheduled",
+      "editAria": "Edit schedule for {branch} on {date}",
+      "dialogTitle": "{branch} — {date}",
+      "noEmployees": "No active employees at this branch.",
+      "saveSchedule": "Save schedule",
+      "savedToast": "Schedule updated.",
+      "none": "None",
+      "readOnlyNote": "You have read-only access to the schedule."
+    },
+    "dashboardCoverage": {
+      "heading": "No One Scheduled Today",
+      "description": "These branches have no staff scheduled for today."
+    }
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Account, appearance, and sound preferences.",

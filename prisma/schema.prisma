@@ -52,6 +52,21 @@ enum AdjustmentDirection {
   DECREASE
 }
 
+enum EmployeePosition {
+  BARISTA
+  CASHIER
+  SHIFT_LEAD
+  BRANCH_MANAGER
+  CLEANER
+  OTHER
+}
+
+enum ShiftType {
+  MORNING
+  EVENING
+  FULL_DAY
+}
+
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -65,6 +80,7 @@ model Branch {
   expenses       Expense[]
   branchStock    BranchStock[]
   stockMovements StockMovement[]
+  employees      Employee[]
 }
 
 model User {
@@ -234,4 +250,32 @@ model StockMovement {
   supplier  Supplier? @relation(fields: [supplierId], references: [id])
   enteredBy User      @relation(fields: [enteredById], references: [id])
   expense   Expense?  @relation(fields: [expenseId], references: [id])
+}
+
+model Employee {
+  id         String           @id @default(cuid())
+  name       String
+  phone      String?
+  branchId   String
+  position   EmployeePosition
+  salaryIls  Decimal          @db.Decimal(10, 2)
+  startDate  DateTime         @db.Date
+  isActive   Boolean          @default(true)
+  notes      String?
+  createdAt  DateTime         @default(now())
+
+  branch           Branch            @relation(fields: [branchId], references: [id])
+  shiftAssignments ShiftAssignment[]
+}
+
+model ShiftAssignment {
+  id         String    @id @default(cuid())
+  employeeId String
+  date       DateTime  @db.Date
+  shift      ShiftType
+  notes      String?
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
 }

@@ -8,11 +8,13 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { MetricCard } from "@/components/shared/metric-card";
 import { BranchTodayCards } from "@/components/sales/branch-today-cards";
 import { LowStockAlerts } from "@/components/stock/low-stock-alerts";
+import { TodayCoverageStrip } from "@/components/employees/today-coverage-strip";
 import { RevenueLineChart } from "@/components/charts/revenue-line-chart";
 import { formatIls } from "@/lib/format";
 import { getWeeklyMetrics, getDailyRevenueSeries, getTodayPerBranch } from "@/lib/queries/sales";
 import { getFinanceMetrics } from "@/lib/queries/finance";
 import { getLowStockAlerts } from "@/lib/queries/stock";
+import { getTodayCoverageGaps } from "@/lib/queries/employees";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -22,13 +24,14 @@ export default async function DashboardPage() {
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [weeklyMetrics, financeMetrics, { series, branches }, todayPerBranch, lowStockAlerts] =
+  const [weeklyMetrics, financeMetrics, { series, branches }, todayPerBranch, lowStockAlerts, coverageGaps] =
     await Promise.all([
       getWeeklyMetrics(scopedBranchId),
       getFinanceMetrics(scopedBranchId),
       getDailyRevenueSeries(scopedBranchId, 30),
       getTodayPerBranch(scopedBranchId),
       getLowStockAlerts(scopedBranchId),
+      getTodayCoverageGaps(scopedBranchId),
     ]);
 
   const isProfit = financeMetrics.netProfit >= 0;
@@ -39,6 +42,8 @@ export default async function DashboardPage() {
         <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </FadeIn>
+
+      <TodayCoverageStrip gaps={coverageGaps} />
 
       <LowStockAlerts alerts={lowStockAlerts} showBranch={isOwner} />
 
