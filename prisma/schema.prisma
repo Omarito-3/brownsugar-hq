@@ -67,6 +67,56 @@ enum ShiftType {
   FULL_DAY
 }
 
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum DocumentCategory {
+  CONTRACT
+  LICENSE
+  TENDER
+  INVOICE
+  INSURANCE
+  OTHER
+}
+
+enum CampaignChannel {
+  INSTAGRAM
+  FACEBOOK
+  TIKTOK
+  IN_STORE
+  INFLUENCER
+  OTHER
+}
+
+enum ExperimentStatus {
+  IDEA
+  TESTING
+  LAUNCHED
+  REJECTED
+}
+
+enum FeedbackSource {
+  IN_PERSON
+  INSTAGRAM
+  GOOGLE_REVIEW
+  OTHER
+}
+
+enum FeedbackSentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -74,13 +124,18 @@ model Branch {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  users          User[]
-  branchProducts BranchProduct[]
-  salesEntries   SalesEntry[]
-  expenses       Expense[]
-  branchStock    BranchStock[]
-  stockMovements StockMovement[]
-  employees      Employee[]
+  users           User[]
+  branchProducts  BranchProduct[]
+  salesEntries    SalesEntry[]
+  expenses        Expense[]
+  branchStock     BranchStock[]
+  stockMovements  StockMovement[]
+  employees       Employee[]
+  tasks           Task[]
+  documents       Document[]
+  campaigns       Campaign[]
+  menuExperiments MenuExperiment[]
+  feedback        Feedback[]
 }
 
 model User {
@@ -92,10 +147,13 @@ model User {
   branchId     String?
   createdAt    DateTime @default(now())
 
-  branch         Branch?         @relation(fields: [branchId], references: [id])
-  salesEntries   SalesEntry[]
-  expenses       Expense[]
-  stockMovements StockMovement[]
+  branch            Branch?         @relation(fields: [branchId], references: [id])
+  salesEntries      SalesEntry[]
+  expenses          Expense[]
+  stockMovements    StockMovement[]
+  tasksAssigned     Task[]          @relation("TaskAssignee")
+  tasksCreated      Task[]          @relation("TaskCreator")
+  documentsUploaded Document[]
 }
 
 model Product {
@@ -192,6 +250,7 @@ model Expense {
   currency      Currency       @relation(fields: [currencyCode], references: [code])
   enteredBy     User           @relation(fields: [enteredById], references: [id])
   stockMovement StockMovement?
+  campaign      Campaign?
 }
 
 model Supplier {
@@ -253,16 +312,16 @@ model StockMovement {
 }
 
 model Employee {
-  id         String           @id @default(cuid())
-  name       String
-  phone      String?
-  branchId   String
-  position   EmployeePosition
-  salaryIls  Decimal          @db.Decimal(10, 2)
-  startDate  DateTime         @db.Date
-  isActive   Boolean          @default(true)
-  notes      String?
-  createdAt  DateTime         @default(now())
+  id        String           @id @default(cuid())
+  name      String
+  phone     String?
+  branchId  String
+  position  EmployeePosition
+  salaryIls Decimal          @db.Decimal(10, 2)
+  startDate DateTime         @db.Date
+  isActive  Boolean          @default(true)
+  notes     String?
+  createdAt DateTime         @default(now())
 
   branch           Branch            @relation(fields: [branchId], references: [id])
   shiftAssignments ShiftAssignment[]
@@ -278,4 +337,77 @@ model ShiftAssignment {
   employee Employee @relation(fields: [employeeId], references: [id])
 
   @@unique([employeeId, date])
+}
+
+model Task {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  branchId     String?
+  assignedToId String?
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  dueDate      DateTime?    @db.Date
+  createdById  String
+  createdAt    DateTime     @default(now())
+  completedAt  DateTime?
+
+  branch     Branch? @relation(fields: [branchId], references: [id])
+  assignedTo User?   @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  createdBy  User    @relation("TaskCreator", fields: [createdById], references: [id])
+}
+
+model Document {
+  id           String           @id @default(cuid())
+  title        String
+  category     DocumentCategory
+  branchId     String?
+  fileUrl      String
+  expiryDate   DateTime?        @db.Date
+  notes        String?
+  uploadedById String
+  createdAt    DateTime         @default(now())
+
+  branch     Branch? @relation(fields: [branchId], references: [id])
+  uploadedBy User    @relation(fields: [uploadedById], references: [id])
+}
+
+model Campaign {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  branchId    String?
+  startDate   DateTime        @db.Date
+  endDate     DateTime        @db.Date
+  budgetIls   Decimal?        @db.Decimal(10, 2)
+  channel     CampaignChannel
+  notes       String?
+  expenseId   String?         @unique
+  createdAt   DateTime        @default(now())
+
+  branch  Branch?  @relation(fields: [branchId], references: [id])
+  expense Expense? @relation(fields: [expenseId], references: [id])
+}
+
+model MenuExperiment {
+  id          String           @id @default(cuid())
+  productName String
+  notes       String
+  status      ExperimentStatus @default(IDEA)
+  branchId    String?
+  createdAt   DateTime         @default(now())
+
+  branch Branch? @relation(fields: [branchId], references: [id])
+}
+
+model Feedback {
+  id        String            @id @default(cuid())
+  branchId  String
+  date      DateTime          @db.Date
+  source    FeedbackSource
+  sentiment FeedbackSentiment
+  content   String
+  createdAt DateTime          @default(now())
+
+  branch Branch @relation(fields: [branchId], references: [id])
 }

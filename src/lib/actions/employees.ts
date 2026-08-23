@@ -33,7 +33,7 @@ async function requireAccess(targetBranchId?: string) {
 
 export async function createEmployee(input: EmployeeInput): Promise<EmployeeActionResult> {
   const [tv, tc] = await Promise.all([
-    getTranslations("employees.validation"),
+    getTranslations("employees"),
     getTranslations("common"),
   ]);
   const parsed = employeeSchema(tv).safeParse(input);
@@ -64,7 +64,7 @@ export async function createEmployee(input: EmployeeInput): Promise<EmployeeActi
 
 export async function updateEmployee(id: string, input: EmployeeInput): Promise<EmployeeActionResult> {
   const [tv, tc] = await Promise.all([
-    getTranslations("employees.validation"),
+    getTranslations("employees"),
     getTranslations("common"),
   ]);
 

@@ -94,7 +94,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
   const [session, t, tv, tc] = await Promise.all([
     auth(),
     getTranslations("stock.actions"),
-    getTranslations("stock.validation"),
+    getTranslations("stock"),
     getTranslations("common"),
   ]);
   if (!session?.user) return { ok: false, error: tc("notAuthenticated") };

@@ -63,7 +63,7 @@ export async function createSalesEntry(input: SalesEntryInput): Promise<SalesAct
   ]);
   if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
-  const tv = await getTranslations("sales.validation");
+  const tv = await getTranslations("sales");
   const parsed = salesEntrySchema(tv).safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
@@ -149,7 +149,7 @@ export async function updateSalesEntry(
   const canEdit = role === "OWNER" || existingEntry.branchId === userBranchId;
   if (!canEdit) return { ok: false, error: t("noPermissionEdit") };
 
-  const tv = await getTranslations("sales.validation");
+  const tv = await getTranslations("sales");
   const parsed = salesEntrySchema(tv).safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };

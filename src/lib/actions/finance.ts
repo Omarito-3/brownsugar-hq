@@ -32,7 +32,7 @@ export async function createExpense(input: ExpenseInput): Promise<ExpenseActionR
   ]);
   if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
 
-  const tv = await getTranslations("finance.validation");
+  const tv = await getTranslations("finance");
   const parsed = expenseSchema(tv).safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };
@@ -81,7 +81,7 @@ export async function updateExpense(id: string, input: ExpenseInput): Promise<Ex
   const canEdit = role === "OWNER" || existing.branchId === userBranchId;
   if (!canEdit) return { ok: false, error: t("noPermissionEdit") };
 
-  const tv = await getTranslations("finance.validation");
+  const tv = await getTranslations("finance");
   const parsed = expenseSchema(tv).safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message || tc("invalidInput") };

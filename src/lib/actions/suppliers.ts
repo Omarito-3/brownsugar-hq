@@ -29,7 +29,7 @@ export async function createSupplier(input: SupplierInput): Promise<SupplierActi
   if (!access.ok) return access;
 
   const [tv, tc] = await Promise.all([
-    getTranslations("stock.validation"),
+    getTranslations("stock"),
     getTranslations("common"),
   ]);
   const parsed = supplierSchema(tv).safeParse(input);
@@ -57,7 +57,7 @@ export async function updateSupplier(
   if (!access.ok) return access;
 
   const [tv, tc] = await Promise.all([
-    getTranslations("stock.validation"),
+    getTranslations("stock"),
     getTranslations("common"),
   ]);
   const parsed = supplierSchema(tv).safeParse(input);

@@ -12,11 +12,11 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
 
 /**
- * Stores receipt uploads under public/uploads for local development.
+ * Stores uploads under public/uploads for local development.
  * TODO: swap this for cloud object storage (e.g. S3/R2) at deploy time —
  * local disk storage does not survive redeploys on most hosts.
  */
-export async function uploadReceipt(formData: FormData): Promise<UploadResult> {
+async function storeUpload(formData: FormData): Promise<UploadResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Not authenticated." };
 
@@ -24,7 +24,7 @@ export async function uploadReceipt(formData: FormData): Promise<UploadResult> {
   if (!(file instanceof File)) return { ok: false, error: "No file provided." };
 
   if (!ALLOWED_TYPES.has(file.type)) {
-    return { ok: false, error: "Only JPG, PNG, WEBP, HEIC, or PDF receipts are supported." };
+    return { ok: false, error: "Only JPG, PNG, WEBP, HEIC, or PDF files are supported." };
   }
   if (file.size > MAX_FILE_SIZE) {
     return { ok: false, error: "File is too large (max 5MB)." };
@@ -39,4 +39,12 @@ export async function uploadReceipt(formData: FormData): Promise<UploadResult> {
   await writeFile(path.join(uploadDir, filename), bytes);
 
   return { ok: true, url: `/uploads/${filename}` };
+}
+
+export async function uploadReceipt(formData: FormData): Promise<UploadResult> {
+  return storeUpload(formData);
+}
+
+export async function uploadDocumentFile(formData: FormData): Promise<UploadResult> {
+  return storeUpload(formData);
 }

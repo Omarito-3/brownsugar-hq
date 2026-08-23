@@ -34,20 +34,45 @@ async function main() {
     });
   }
 
-  const ownerEmail = "owner@brownsugar.hq";
-  const ownerPassword = "BrownSugar123!";
-  const passwordHash = await bcrypt.hash(ownerPassword, 10);
+  // Shared dev password for all seeded accounts — local/testing only.
+  const seedPassword = "BrownSugar123!";
+  const passwordHash = await bcrypt.hash(seedPassword, 10);
 
-  await prisma.user.upsert({
-    where: { email: ownerEmail },
-    update: {},
-    create: {
-      name: "Owner",
-      email: ownerEmail,
-      passwordHash,
-      role: "OWNER",
+  // MANAGER and STAFF share a branch on purpose: that makes it possible to see
+  // the same branch's data under two different roles when checking scoping.
+  const scopedBranch = branches.find((b) => b.name === "Batn al-Hawa") ?? branches[0];
+
+  const userSeeds = [
+    { name: "Owner", email: "owner@brownsugar.hq", role: "OWNER" as const, branchId: null },
+    {
+      name: "Branch Manager",
+      email: "manager@brownsugar.hq",
+      role: "MANAGER" as const,
+      branchId: scopedBranch.id,
     },
-  });
+    {
+      name: "Staff Member",
+      email: "staff@brownsugar.hq",
+      role: "STAFF" as const,
+      branchId: scopedBranch.id,
+    },
+  ];
+
+  for (const u of userSeeds) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      // Re-running the seed re-asserts role and branch, so an account that was
+      // created before these fields existed gets corrected rather than skipped.
+      update: { role: u.role, branchId: u.branchId },
+      create: {
+        name: u.name,
+        email: u.email,
+        passwordHash,
+        role: u.role,
+        branchId: u.branchId,
+      },
+    });
+  }
 
   const products = [
     { name: "Brown Sugar Boba Milk", nameAr: "حليب البوبا بالسكر البني", category: ProductCategory.BUBBLE_TEA, basePriceIls: "22.00", costIls: "7.50" },
@@ -82,7 +107,11 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log(`Owner login -> email: ${ownerEmail}  password: ${ownerPassword}`);
+  console.log(`All seeded accounts use the password: ${seedPassword}`);
+  for (const u of userSeeds) {
+    const scope = u.branchId ? scopedBranch.name : "all branches";
+    console.log(`  ${u.role.padEnd(7)} -> ${u.email}  (${scope})`);
+  }
 }
 
 main()

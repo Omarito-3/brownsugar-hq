@@ -16,6 +16,14 @@ export async function getCurrencies() {
   return currencies.map((c) => ({ code: c.code, rateToIls: toNumber(c.rateToIls) }));
 }
 
+export async function getAssignableUsers(scopedBranchId?: string) {
+  return prisma.user.findMany({
+    where: scopedBranchId ? { branchId: scopedBranchId } : {},
+    select: { id: true, name: true, role: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function getCurrenciesWithMeta() {
   const currencies = await prisma.currency.findMany({ orderBy: { code: "asc" } });
   return currencies.map((c) => ({

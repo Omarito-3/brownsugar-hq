@@ -29,7 +29,7 @@ export async function createStockItem(input: StockItemInput): Promise<StockItemA
   if (!access.ok) return access;
 
   const [tv, tc] = await Promise.all([
-    getTranslations("stock.validation"),
+    getTranslations("stock"),
     getTranslations("common"),
   ]);
   const parsed = stockItemSchema(tv).safeParse(input);
@@ -59,7 +59,7 @@ export async function updateStockItem(
   if (!access.ok) return access;
 
   const [tv, tc] = await Promise.all([
-    getTranslations("stock.validation"),
+    getTranslations("stock"),
     getTranslations("common"),
   ]);
   const parsed = stockItemSchema(tv).safeParse(input);
