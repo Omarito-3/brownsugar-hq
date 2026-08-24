@@ -40,7 +40,7 @@ export function RecentMovementsTable({ movements }: { movements: RecentMovements
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("stock.columnDate")}</TableHead>
-                    <TableHead>{t("stock.columnBranch")}</TableHead>
+                    <TableHead>{t("stock.columnLocation")}</TableHead>
                     <TableHead>{t("stock.columnItem")}</TableHead>
                     <TableHead>{t("stock.columnType")}</TableHead>
                     <TableHead className="text-end">{t("stock.columnQuantity")}</TableHead>
@@ -53,7 +53,9 @@ export function RecentMovementsTable({ movements }: { movements: RecentMovements
                       <TableCell className="text-muted-foreground">
                         {formatDate(m.date, locale)}
                       </TableCell>
-                      <TableCell className="font-medium">{m.branchName}</TableCell>
+                      <TableCell className="font-medium">
+                        {localizedName(m.locationName, m.locationNameAr, locale)}
+                      </TableCell>
                       <TableCell>{localizedName(m.itemName, m.itemNameAr, locale)}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">

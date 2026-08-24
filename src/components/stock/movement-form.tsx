@@ -39,22 +39,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type BranchOption = { id: string; name: string };
+type LocationOption = { id: string; name: string; nameAr: string | null; type: string };
 type ItemOption = { id: string; name: string; nameAr: string | null; unit: string };
 type SupplierOption = { id: string; name: string };
 
 export function MovementForm({
-  branches,
+  locations,
   items,
   suppliers,
   isOwner,
-  defaultBranchId,
+  defaultLocationId,
 }: {
-  branches: BranchOption[];
+  locations: LocationOption[];
   items: ItemOption[];
   suppliers: SupplierOption[];
   isOwner: boolean;
-  defaultBranchId: string;
+  defaultLocationId: string;
 }) {
   const router = useRouter();
   const t = useTranslations("stock");
@@ -70,9 +70,9 @@ export function MovementForm({
 
   const defaultValues: MovementFormInput = {
     type: "PURCHASE",
-    branchId: defaultBranchId,
-    fromBranchId: "",
-    toBranchId: "",
+    locationId: defaultLocationId,
+    fromLocationId: "",
+    toLocationId: "",
     stockItemId: "",
     quantity: "",
     date: todayDateKey(),
@@ -145,7 +145,7 @@ export function MovementForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField
               control={form.control}
-              name="fromBranchId"
+              name="fromLocationId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-base">{t("form.fromBranch")}</FormLabel>
@@ -156,9 +156,9 @@ export function MovementForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {branches.map((b) => (
+                      {locations.map((b) => (
                         <SelectItem key={b.id} value={b.id} className="text-base">
-                          {b.name}
+                          {localizedName(b.name, b.nameAr, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -169,7 +169,7 @@ export function MovementForm({
             />
             <FormField
               control={form.control}
-              name="toBranchId"
+              name="toLocationId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-base">{t("form.toBranch")}</FormLabel>
@@ -180,9 +180,9 @@ export function MovementForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {branches.map((b) => (
+                      {locations.map((b) => (
                         <SelectItem key={b.id} value={b.id} className="text-base">
-                          {b.name}
+                          {localizedName(b.name, b.nameAr, locale)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -195,7 +195,7 @@ export function MovementForm({
         ) : isOwner ? (
           <FormField
             control={form.control}
-            name="branchId"
+            name="locationId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-base">{t("form.branch")}</FormLabel>
@@ -206,9 +206,9 @@ export function MovementForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {branches.map((b) => (
+                    {locations.map((b) => (
                       <SelectItem key={b.id} value={b.id} className="text-base">
-                        {b.name}
+                        {localizedName(b.name, b.nameAr, locale)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -221,7 +221,7 @@ export function MovementForm({
           <div>
             <Label className="text-base">{t("form.branch")}</Label>
             <div className="mt-2 flex h-12 items-center rounded-md border border-input bg-muted px-3 text-base">
-              {branches[0]?.name ?? tCommon("noBranchAssigned")}
+              {localizedName(locations[0]?.name ?? "", locations[0]?.nameAr ?? null, locale) || tCommon("noBranchAssigned")}
             </div>
           </div>
         )}

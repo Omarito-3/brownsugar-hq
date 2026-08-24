@@ -25,9 +25,9 @@ export function movementSchema(t: TFunc) {
   return z
     .object({
       type: z.enum(movementTypeValues),
-      branchId: z.string().optional().or(z.literal("")),
-      fromBranchId: z.string().optional().or(z.literal("")),
-      toBranchId: z.string().optional().or(z.literal("")),
+      locationId: z.string().optional().or(z.literal("")),
+      fromLocationId: z.string().optional().or(z.literal("")),
+      toLocationId: z.string().optional().or(z.literal("")),
       stockItemId: z.string().min(1, t("validation.selectItem")),
       quantity: z.coerce.number().positive(t("validation.quantityPositive")),
       date: z
@@ -41,21 +41,21 @@ export function movementSchema(t: TFunc) {
     })
     .superRefine((data, ctx) => {
       if (data.type === "TRANSFER") {
-        if (!data.fromBranchId) {
-          ctx.addIssue({ code: "custom", path: ["fromBranchId"], message: t("validation.fromBranchRequired") });
+        if (!data.fromLocationId) {
+          ctx.addIssue({ code: "custom", path: ["fromLocationId"], message: t("validation.fromLocationRequired") });
         }
-        if (!data.toBranchId) {
-          ctx.addIssue({ code: "custom", path: ["toBranchId"], message: t("validation.toBranchRequired") });
+        if (!data.toLocationId) {
+          ctx.addIssue({ code: "custom", path: ["toLocationId"], message: t("validation.toLocationRequired") });
         }
-        if (data.fromBranchId && data.toBranchId && data.fromBranchId === data.toBranchId) {
+        if (data.fromLocationId && data.toLocationId && data.fromLocationId === data.toLocationId) {
           ctx.addIssue({
             code: "custom",
-            path: ["toBranchId"],
+            path: ["toLocationId"],
             message: t("validation.fromToDifferent"),
           });
         }
-      } else if (!data.branchId) {
-        ctx.addIssue({ code: "custom", path: ["branchId"], message: t("validation.branchRequired") });
+      } else if (!data.locationId) {
+        ctx.addIssue({ code: "custom", path: ["locationId"], message: t("validation.locationRequired") });
       }
 
       if (data.type === "ADJUSTMENT" && !data.direction) {
@@ -73,3 +73,39 @@ export type MovementInput = z.output<ReturnType<typeof movementSchema>>;
 
 /** Pre-validation shape (numeric fields are `unknown` before coercion) — what the form holds. */
 export type MovementFormInput = z.input<ReturnType<typeof movementSchema>>;
+
+export const locationTypeValues = ["WAREHOUSE", "BRANCH"] as const;
+
+export function stockLocationSchema(t: TFunc) {
+  return z.object({
+    name: z.string().min(1, t("validation.nameRequired")).max(200),
+    nameAr: z.string().max(200).optional().or(z.literal("")),
+  });
+}
+
+export type StockLocationInput = z.output<ReturnType<typeof stockLocationSchema>>;
+
+export const requestStatusValues = ["PENDING", "APPROVED", "FULFILLED", "REJECTED"] as const;
+
+export function stockRequestSchema(t: TFunc) {
+  return z.object({
+    requestingLocationId: z.string().min(1, t("validation.locationRequired")),
+    fulfillingLocationId: z.string().min(1, t("validation.fulfillingRequired")),
+    notes: z.string().max(1000).optional().or(z.literal("")),
+    items: z
+      .array(
+        z.object({
+          stockItemId: z.string().min(1, t("validation.selectItem")),
+          quantityRequested: z.coerce.number().positive(t("validation.quantityPositive")),
+        })
+      )
+      .min(1, t("validation.atLeastOneItem"))
+      .refine(
+        (rows) => new Set(rows.map((r) => r.stockItemId)).size === rows.length,
+        t("validation.itemUnique")
+      ),
+  });
+}
+
+export type StockRequestInput = z.output<ReturnType<typeof stockRequestSchema>>;
+export type StockRequestFormInput = z.input<ReturnType<typeof stockRequestSchema>>;

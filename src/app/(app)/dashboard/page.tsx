@@ -8,6 +8,7 @@ import { FadeIn } from "@/components/motion/fade-in";
 import { MetricCard } from "@/components/shared/metric-card";
 import { BranchTodayCards } from "@/components/sales/branch-today-cards";
 import { LowStockAlerts } from "@/components/stock/low-stock-alerts";
+import { PendingRequestsStrip } from "@/components/stock/pending-requests-strip";
 import { TodayCoverageStrip } from "@/components/employees/today-coverage-strip";
 import { ExpiringDocumentsStrip } from "@/components/management/expiring-documents-strip";
 import { HighPriorityTasksStrip } from "@/components/management/high-priority-tasks-strip";
@@ -15,7 +16,7 @@ import { RevenueLineChart } from "@/components/charts/revenue-line-chart";
 import { formatIls } from "@/lib/format";
 import { getWeeklyMetrics, getDailyRevenueSeries, getTodayPerBranch } from "@/lib/queries/sales";
 import { getFinanceMetrics } from "@/lib/queries/finance";
-import { getLowStockAlerts } from "@/lib/queries/stock";
+import { getLowStockAlerts, getPendingRequestCount } from "@/lib/queries/stock";
 import { getTodayCoverageGaps } from "@/lib/queries/employees";
 import { getExpiringDocuments, getOpenHighPriorityTaskCount } from "@/lib/queries/management";
 
@@ -37,6 +38,7 @@ export default async function DashboardPage() {
     coverageGaps,
     expiringDocuments,
     highPriorityTaskCount,
+    pendingRequestCount,
   ] = await Promise.all([
     getWeeklyMetrics(scopedBranchId),
     getFinanceMetrics(scopedBranchId),
@@ -46,6 +48,7 @@ export default async function DashboardPage() {
     getTodayCoverageGaps(scopedBranchId),
     isStaff ? Promise.resolve([]) : getExpiringDocuments(scopedBranchId),
     getOpenHighPriorityTaskCount(scopedBranchId, isStaff ? session.user.id : undefined),
+    getPendingRequestCount(session.user.role, scopedBranchId),
   ]);
 
   const isProfit = financeMetrics.netProfit >= 0;
@@ -59,11 +62,13 @@ export default async function DashboardPage() {
 
       <TodayCoverageStrip gaps={coverageGaps} />
 
+      <PendingRequestsStrip count={pendingRequestCount} />
+
       <HighPriorityTasksStrip count={highPriorityTaskCount} />
 
       <ExpiringDocumentsStrip documents={expiringDocuments} />
 
-      <LowStockAlerts alerts={lowStockAlerts} showBranch={isOwner} />
+      <LowStockAlerts alerts={lowStockAlerts} showLocation />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard

@@ -4,8 +4,11 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { MovementForm } from "@/components/stock/movement-form";
 import { FadeIn } from "@/components/motion/fade-in";
-import { getBranchesForUser } from "@/lib/queries/shared";
-import { getStockItemsForForm, getSuppliersForForm } from "@/lib/queries/stock";
+import {
+  getStockItemsForForm,
+  getSuppliersForForm,
+  getStockLocations,
+} from "@/lib/queries/stock";
 
 export default async function StockMovementPage() {
   const session = await auth();
@@ -15,17 +18,17 @@ export default async function StockMovementPage() {
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [branches, allBranches, items, suppliers] = await Promise.all([
-    getBranchesForUser(scopedBranchId),
-    isOwner ? getBranchesForUser() : Promise.resolve([]),
+  const [locations, items, suppliers] = await Promise.all([
+    getStockLocations(scopedBranchId),
     getStockItemsForForm(),
     getSuppliersForForm(),
   ]);
 
-  // Owners need the full branch list for transfers (from/to), even though
-  // `branches` above may already be the full list for them — kept separate
-  // so non-owners never receive branches beyond their own from either call.
-  const branchOptions = isOwner ? allBranches : branches;
+  // Non-owners record movements only against their own branch's location —
+  // warehouses are visible to them for requests, but not writable here.
+  const writableLocations = isOwner
+    ? locations
+    : locations.filter((l) => l.branchId === scopedBranchId);
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -35,11 +38,11 @@ export default async function StockMovementPage() {
       </FadeIn>
       <FadeIn delay={0.05}>
         <MovementForm
-          branches={branchOptions}
+          locations={isOwner ? locations : writableLocations}
           items={items}
           suppliers={suppliers}
           isOwner={isOwner}
-          defaultBranchId={isOwner ? "" : (branches[0]?.id ?? "")}
+          defaultLocationId={isOwner ? "" : (writableLocations[0]?.id ?? "")}
         />
       </FadeIn>
     </div>

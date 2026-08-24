@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Plus, Boxes, Truck } from "lucide-react";
+import { Plus, Boxes, Truck, Warehouse, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
@@ -10,26 +10,38 @@ import { LowStockAlerts } from "@/components/stock/low-stock-alerts";
 import { StockLevelsGrid } from "@/components/stock/stock-levels-grid";
 import { RecentMovementsTable } from "@/components/stock/recent-movements-table";
 import { StockMetricCards } from "@/components/stock/metric-cards";
+import { LocationSelector } from "@/components/stock/location-selector";
 import {
   getLowStockAlerts,
   getStockLevelsGrid,
   getRecentMovements,
   getStockMetrics,
+  getStockLocations,
+  getEditableLocationIds,
 } from "@/lib/queries/stock";
 
-export default async function StockPage() {
+export default async function StockPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ location?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  const { location: locationParam } = await searchParams;
   const t = await getTranslations("stock");
   const isOwner = session.user.role === "OWNER";
   const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
-  const [alerts, levelsGrid, movements, metrics] = await Promise.all([
-    getLowStockAlerts(scopedBranchId),
-    getStockLevelsGrid(scopedBranchId),
-    getRecentMovements(scopedBranchId, 15),
-    getStockMetrics(scopedBranchId),
+  const locations = await getStockLocations(scopedBranchId);
+  const selectedLocation = locations.some((l) => l.id === locationParam) ? locationParam : undefined;
+
+  const [alerts, levelsGrid, movements, metrics, editableLocationIds] = await Promise.all([
+    getLowStockAlerts(scopedBranchId, selectedLocation),
+    getStockLevelsGrid(scopedBranchId, selectedLocation),
+    getRecentMovements(scopedBranchId, selectedLocation, 15),
+    getStockMetrics(scopedBranchId, selectedLocation),
+    getEditableLocationIds(session.user.role, scopedBranchId),
   ]);
 
   return (
@@ -40,6 +52,20 @@ export default async function StockPage() {
           <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline" className="h-12 text-base">
+            <Link href="/stock/requests">
+              <ClipboardList className="size-4" />
+              {t("requests")}
+            </Link>
+          </Button>
+          {isOwner && (
+            <Button asChild variant="outline" className="h-12 text-base">
+              <Link href="/stock/locations">
+                <Warehouse className="size-4" />
+                {t("locations")}
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline" className="h-12 text-base">
             <Link href="/stock/suppliers">
               <Truck className="size-4" />
@@ -61,11 +87,15 @@ export default async function StockPage() {
         </div>
       </FadeIn>
 
-      <LowStockAlerts alerts={alerts} showBranch={isOwner} />
+      <FadeIn delay={0.02}>
+        <LocationSelector locations={locations} selected={selectedLocation} />
+      </FadeIn>
+
+      <LowStockAlerts alerts={alerts} showLocation />
 
       <StockMetricCards metrics={metrics} />
 
-      <StockLevelsGrid data={levelsGrid} />
+      <StockLevelsGrid data={levelsGrid} editableLocationIds={editableLocationIds} />
 
       <RecentMovementsTable movements={movements} />
     </div>

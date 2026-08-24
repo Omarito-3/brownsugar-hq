@@ -5,8 +5,8 @@ import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { toNumber } from "@/lib/format";
 import { movementSchema, type MovementInput } from "@/lib/validations/stock";
+import { applyMovementTx, InsufficientStockError } from "@/lib/stock-movements";
 
 export type StockActionResult =
   | { ok: true; expenseCreated?: number }
@@ -16,78 +16,21 @@ function toDate(dateKey: string): Date {
   return new Date(`${dateKey}T00:00:00.000Z`);
 }
 
-class InsufficientStockError extends Error {}
-
-// ADJUSTMENT's sign depends on its `direction` field instead of a fixed type,
-// so it's intentionally not listed here — see the isAdd logic below.
-const ADDING_TYPES = new Set(["PURCHASE", "TRANSFER_IN"]);
-
-type DbMovementType =
-  | "PURCHASE"
-  | "CONSUMPTION"
-  | "WASTE"
-  | "TRANSFER_IN"
-  | "TRANSFER_OUT"
-  | "ADJUSTMENT";
-
-type AdjustmentDirection = "INCREASE" | "DECREASE";
-
-/**
- * Upserts the BranchStock row, applies the signed delta for this movement
- * type, rejects if the result would go negative, and writes the
- * StockMovement row — all within the caller's transaction.
- */
-async function applyMovementTx(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma's interactive-transaction client type isn't cleanly extractable from the generated client's overloaded $transaction signature.
-  tx: any,
-  params: {
-    branchId: string;
-    stockItemId: string;
-    type: DbMovementType;
-    direction?: AdjustmentDirection | null;
-    quantity: number;
-    date: Date;
-    enteredById: string;
-    costIls?: number | null;
-    supplierId?: string | null;
-    expenseId?: string | null;
-    notes?: string | null;
+/** Locations a user may record movements against. */
+async function writableLocationIds(role: string, branchId?: string | null): Promise<string[]> {
+  if (role === "OWNER") {
+    const all = await prisma.stockLocation.findMany({
+      where: { isActive: true },
+      select: { id: true },
+    });
+    return all.map((l) => l.id);
   }
-) {
-  const isAdd =
-    params.type === "ADJUSTMENT" ? params.direction === "INCREASE" : ADDING_TYPES.has(params.type);
-
-  const branchStock = await tx.branchStock.upsert({
-    where: { branchId_stockItemId: { branchId: params.branchId, stockItemId: params.stockItemId } },
-    update: {},
-    create: { branchId: params.branchId, stockItemId: params.stockItemId, currentQuantity: 0 },
+  if (!branchId) return [];
+  const own = await prisma.stockLocation.findMany({
+    where: { isActive: true, branchId },
+    select: { id: true },
   });
-
-  const current = toNumber(branchStock.currentQuantity);
-  const next = isAdd ? current + params.quantity : current - params.quantity;
-  if (next < 0) {
-    throw new InsufficientStockError(
-      "Not enough stock for this movement — it would bring the quantity below zero."
-    );
-  }
-
-  await tx.branchStock.update({ where: { id: branchStock.id }, data: { currentQuantity: next } });
-
-  await tx.stockMovement.create({
-    data: {
-      branchId: params.branchId,
-      stockItemId: params.stockItemId,
-      type: params.type,
-      direction: params.type === "ADJUSTMENT" ? params.direction : null,
-      quantity: params.quantity,
-      costIls: params.costIls ?? null,
-      supplierId: params.supplierId ?? null,
-      expenseId: params.expenseId ?? null,
-      notes: params.notes || null,
-      date: params.date,
-      enteredById: params.enteredById,
-    },
-  });
+  return own.map((l) => l.id);
 }
 
 export async function recordMovement(input: MovementInput): Promise<StockActionResult> {
@@ -107,6 +50,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
   const data = parsed.data;
   const { role, branchId: userBranchId, id: userId } = session.user;
   const date = toDate(data.date);
+  const allowed = await writableLocationIds(role, userBranchId);
 
   try {
     if (data.type === "TRANSFER") {
@@ -114,12 +58,12 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
         return { ok: false, error: t("ownerOnlyTransfer") };
       }
 
-      const fromBranchId = data.fromBranchId!;
-      const toBranchId = data.toBranchId!;
+      const fromLocationId = data.fromLocationId!;
+      const toLocationId = data.toLocationId!;
 
       await prisma.$transaction(async (tx) => {
         await applyMovementTx(tx, {
-          branchId: fromBranchId,
+          locationId: fromLocationId,
           stockItemId: data.stockItemId,
           type: "TRANSFER_OUT",
           quantity: data.quantity,
@@ -128,7 +72,7 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
           notes: data.notes,
         });
         await applyMovementTx(tx, {
-          branchId: toBranchId,
+          locationId: toLocationId,
           stockItemId: data.stockItemId,
           type: "TRANSFER_IN",
           quantity: data.quantity,
@@ -143,26 +87,40 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
       return { ok: true };
     }
 
-    const branchId = role === "OWNER" ? data.branchId! : userBranchId;
-    if (!branchId) return { ok: false, error: t("noBranchAssigned") };
+    const locationId = data.locationId!;
+    if (!allowed.includes(locationId)) {
+      return { ok: false, error: t("noLocationAccess") };
+    }
 
     // Narrowed to a local const: property narrowing on `data.type` doesn't
     // survive into the transaction closure below, but a local const does.
     const movementType = data.type as Exclude<typeof data.type, "TRANSFER">;
+
+    // A PURCHASE only posts a Finance expense when the stock lands at a branch —
+    // warehouse purchases have no single branch to attribute the cost to.
+    const location = await prisma.stockLocation.findUnique({
+      where: { id: locationId },
+      select: { branchId: true },
+    });
 
     let expenseCreated: number | undefined;
 
     await prisma.$transaction(async (tx) => {
       let expenseId: string | null = null;
 
-      if (movementType === "PURCHASE" && data.costIls && data.costIls > 0) {
+      if (
+        movementType === "PURCHASE" &&
+        data.costIls &&
+        data.costIls > 0 &&
+        location?.branchId
+      ) {
         const item = await tx.stockItem.findUnique({
           where: { id: data.stockItemId },
           select: { name: true },
         });
         const expense = await tx.expense.create({
           data: {
-            branchId,
+            branchId: location.branchId,
             date,
             category: "SUPPLIES",
             amountOriginal: data.costIls,
@@ -177,10 +135,10 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
       }
 
       await applyMovementTx(tx, {
-        branchId,
+        locationId,
         stockItemId: data.stockItemId,
         type: movementType,
-        direction: movementType === "ADJUSTMENT" ? (data.direction || null) : null,
+        direction: movementType === "ADJUSTMENT" ? data.direction || null : null,
         quantity: data.quantity,
         date,
         enteredById: userId,
@@ -202,4 +160,33 @@ export async function recordMovement(input: MovementInput): Promise<StockActionR
     }
     return { ok: false, error: tc("somethingWrong") };
   }
+}
+
+export async function setLocationMinimum(
+  locationId: string,
+  stockItemId: string,
+  minimumQuantity: number
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const [session, t, tc] = await Promise.all([
+    auth(),
+    getTranslations("stock.actions"),
+    getTranslations("common"),
+  ]);
+  if (!session?.user) return { ok: false, error: tc("notAuthenticated") };
+
+  const allowed = await writableLocationIds(session.user.role, session.user.branchId);
+  if (!allowed.includes(locationId)) return { ok: false, error: t("noLocationAccess") };
+  if (!Number.isFinite(minimumQuantity) || minimumQuantity < 0) {
+    return { ok: false, error: tc("invalidInput") };
+  }
+
+  await prisma.locationStock.upsert({
+    where: { locationId_stockItemId: { locationId, stockItemId } },
+    update: { minimumQuantity },
+    create: { locationId, stockItemId, currentQuantity: 0, minimumQuantity },
+  });
+
+  revalidatePath("/stock");
+  revalidatePath("/dashboard");
+  return { ok: true };
 }

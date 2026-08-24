@@ -117,6 +117,18 @@ enum FeedbackSentiment {
   NEGATIVE
 }
 
+enum StockLocationType {
+  WAREHOUSE
+  BRANCH
+}
+
+enum StockRequestStatus {
+  PENDING
+  APPROVED
+  FULFILLED
+  REJECTED
+}
+
 model Branch {
   id        String   @id @default(cuid())
   name      String
@@ -128,8 +140,7 @@ model Branch {
   branchProducts  BranchProduct[]
   salesEntries    SalesEntry[]
   expenses        Expense[]
-  branchStock     BranchStock[]
-  stockMovements  StockMovement[]
+  stockLocations  StockLocation[]
   employees       Employee[]
   tasks           Task[]
   documents       Document[]
@@ -154,6 +165,8 @@ model User {
   tasksAssigned     Task[]          @relation("TaskAssignee")
   tasksCreated      Task[]          @relation("TaskCreator")
   documentsUploaded Document[]
+  stockRequestsMade StockRequest[]  @relation("StockRequestRequester")
+  stockRequestsSeen StockRequest[]  @relation("StockRequestReviewer")
 }
 
 model Product {
@@ -273,25 +286,45 @@ model StockItem {
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
 
-  branchStock    BranchStock[]
-  stockMovements StockMovement[]
+  locationStock     LocationStock[]
+  stockMovements    StockMovement[]
+  stockRequestItems StockRequestItem[]
 }
 
-model BranchStock {
+/// A place stock physically sits: either a warehouse (branchId null) or a branch.
+model StockLocation {
+  id        String            @id @default(cuid())
+  name      String
+  nameAr    String?
+  type      StockLocationType
+  branchId  String?
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+
+  branch            Branch?         @relation(fields: [branchId], references: [id])
+  locationStock     LocationStock[]
+  stockMovements    StockMovement[]
+  requestsMade      StockRequest[]  @relation("StockRequestRequestingLocation")
+  requestsFulfilled StockRequest[]  @relation("StockRequestFulfillingLocation")
+}
+
+model LocationStock {
   id              String  @id @default(cuid())
-  branchId        String
+  locationId      String
   stockItemId     String
   currentQuantity Decimal @default(0) @db.Decimal(10, 2)
+  /// Per-location reorder point. Overrides StockItem.lowStockThreshold when > 0.
+  minimumQuantity Decimal @default(0) @db.Decimal(10, 2)
 
-  branch    Branch    @relation(fields: [branchId], references: [id])
-  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+  location  StockLocation @relation(fields: [locationId], references: [id])
+  stockItem StockItem     @relation(fields: [stockItemId], references: [id])
 
-  @@unique([branchId, stockItemId])
+  @@unique([locationId, stockItemId])
 }
 
 model StockMovement {
   id          String               @id @default(cuid())
-  branchId    String
+  locationId  String
   stockItemId String
   type        StockMovementType
   direction   AdjustmentDirection?
@@ -304,11 +337,40 @@ model StockMovement {
   enteredById String
   createdAt   DateTime             @default(now())
 
-  branch    Branch    @relation(fields: [branchId], references: [id])
-  stockItem StockItem @relation(fields: [stockItemId], references: [id])
-  supplier  Supplier? @relation(fields: [supplierId], references: [id])
-  enteredBy User      @relation(fields: [enteredById], references: [id])
-  expense   Expense?  @relation(fields: [expenseId], references: [id])
+  location  StockLocation @relation(fields: [locationId], references: [id])
+  stockItem StockItem     @relation(fields: [stockItemId], references: [id])
+  supplier  Supplier?     @relation(fields: [supplierId], references: [id])
+  enteredBy User          @relation(fields: [enteredById], references: [id])
+  expense   Expense?      @relation(fields: [expenseId], references: [id])
+}
+
+model StockRequest {
+  id                   String             @id @default(cuid())
+  requestingLocationId String
+  fulfillingLocationId String
+  status               StockRequestStatus @default(PENDING)
+  requestedById        String
+  reviewedById         String?
+  notes                String?
+  createdAt            DateTime           @default(now())
+  reviewedAt           DateTime?
+
+  requestingLocation StockLocation      @relation("StockRequestRequestingLocation", fields: [requestingLocationId], references: [id])
+  fulfillingLocation StockLocation      @relation("StockRequestFulfillingLocation", fields: [fulfillingLocationId], references: [id])
+  requestedBy        User               @relation("StockRequestRequester", fields: [requestedById], references: [id])
+  reviewedBy         User?              @relation("StockRequestReviewer", fields: [reviewedById], references: [id])
+  items              StockRequestItem[]
+}
+
+model StockRequestItem {
+  id                String   @id @default(cuid())
+  stockRequestId    String
+  stockItemId       String
+  quantityRequested Decimal  @db.Decimal(10, 2)
+  quantityFulfilled Decimal? @db.Decimal(10, 2)
+
+  stockRequest StockRequest @relation(fields: [stockRequestId], references: [id], onDelete: Cascade)
+  stockItem    StockItem    @relation(fields: [stockItemId], references: [id])
 }
 
 model Employee {
