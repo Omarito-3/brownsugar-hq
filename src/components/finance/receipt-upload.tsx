@@ -49,7 +49,7 @@ export function ReceiptUpload({
       {value ? (
         <div className="flex items-center gap-3 rounded-lg border border-input p-3">
           {isImage ? (
-            // eslint-disable-next-line @next/next/no-img-element -- locally-served runtime upload, not a build-time asset
+            // eslint-disable-next-line @next/next/no-img-element -- runtime Blob URL, not a build-time asset; next/image would need the Blob host in remotePatterns for no real benefit here
             <img src={value} alt="Receipt preview" className="size-14 rounded-md object-cover" />
           ) : (
             <span className="flex size-14 items-center justify-center rounded-md bg-muted">

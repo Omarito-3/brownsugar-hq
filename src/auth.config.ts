@@ -4,6 +4,13 @@ import type { Role } from "@/generated/prisma/client";
 export default {
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  /**
+   * Derive the callback/base URL from the incoming request's host rather than a
+   * hardcoded AUTH_URL. Vercel terminates TLS at its proxy and sets the Host
+   * header correctly, so this makes preview deployments (which each get their
+   * own URL) work without per-deployment configuration.
+   */
+  trustHost: true,
   providers: [],
   callbacks: {
     jwt({ token, user }) {

@@ -19,9 +19,6 @@
 # production
 /build
 
-# local receipt uploads (dev-only; move to cloud storage at deploy time)
-/public/uploads/*
-!/public/uploads/.gitkeep
 
 # misc
 .DS_Store

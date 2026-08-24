@@ -2,21 +2,34 @@
 
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { put } from "@vercel/blob";
 
 import { auth } from "@/auth";
 
 export type UploadResult = { ok: true; url: string } | { ok: false; error: string };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
+const ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "application/pdf",
+]);
 
 /**
- * Stores uploads under public/uploads for local development.
- * TODO: swap this for cloud object storage (e.g. S3/R2) at deploy time —
- * local disk storage does not survive redeploys on most hosts.
+ * Stores uploads in Vercel Blob.
+ *
+ * Vercel's filesystem is ephemeral — anything written to public/ is lost on the
+ * next deploy — so receipts and documents go to Blob instead. The DB keeps
+ * storing a plain URL string either way, so no schema change was needed.
+ *
+ * Blobs are public: the URL is unguessable (Blob appends a random suffix) but
+ * anyone holding it can read the file. That matches how these are used —
+ * receipt images shown inline in the app — but it does mean the URLs should be
+ * treated as secrets-by-obscurity rather than access-controlled documents.
  */
-async function storeUpload(formData: FormData): Promise<UploadResult> {
+async function storeUpload(formData: FormData, folder: string): Promise<UploadResult> {
   const session = await auth();
   if (!session?.user) return { ok: false, error: "Not authenticated." };
 
@@ -30,21 +43,33 @@ async function storeUpload(formData: FormData): Promise<UploadResult> {
     return { ok: false, error: "File is too large (max 5MB)." };
   }
 
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const ext = path.extname(file.name).toLowerCase() || "";
-  const filename = `${randomUUID()}${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    // Surfaced rather than swallowed: without the token every upload would fail
+    // at the network layer with a much less obvious message.
+    return { ok: false, error: "File storage is not configured." };
+  }
 
-  await mkdir(uploadDir, { recursive: true });
-  await writeFile(path.join(uploadDir, filename), bytes);
+  const ext = path.extname(file.name).toLowerCase();
+  const key = `${folder}/${randomUUID()}${ext}`;
 
-  return { ok: true, url: `/uploads/${filename}` };
+  try {
+    const blob = await put(key, file, {
+      access: "public",
+      contentType: file.type,
+      // The key is already unique; without this Blob would add a second suffix.
+      addRandomSuffix: false,
+    });
+    return { ok: true, url: blob.url };
+  } catch (err) {
+    console.error("[upload] blob put failed:", err);
+    return { ok: false, error: "Upload failed. Please try again." };
+  }
 }
 
 export async function uploadReceipt(formData: FormData): Promise<UploadResult> {
-  return storeUpload(formData);
+  return storeUpload(formData, "receipts");
 }
 
 export async function uploadDocumentFile(formData: FormData): Promise<UploadResult> {
-  return storeUpload(formData);
+  return storeUpload(formData, "documents");
 }

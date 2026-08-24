@@ -82,8 +82,52 @@ digits. Chart axes and internals stay LTR, which is standard for RTL dashboards.
 Translation catalogs live in [`messages/en.json`](messages/en.json) and
 [`messages/ar.json`](messages/ar.json). Both files must stay key-for-key in sync.
 
+## Deployment (Vercel)
+
+### Environment variables
+
+Set these in **Project → Settings → Environment Variables**.
+
+| Variable | Where the value comes from | Required |
+| --- | --- | --- |
+| `DATABASE_URL` | Neon dashboard → your project → **Connection string**. Use the **pooled** string (host contains `-pooler`) — serverless functions open many short-lived connections and will exhaust a direct connection. | Yes |
+| `AUTH_SECRET` | Generate one: `npx auth secret`. Any long random string works; it signs session JWTs. Changing it logs everyone out. | Yes |
+| `BLOB_READ_WRITE_TOKEN` | Injected automatically when you connect a Blob store under **Storage**. Only set by hand for local dev (**Storage → your store → `.env.local` tab**). | Yes, for uploads |
+| `CRON_SECRET` | Invent one: `openssl rand -hex 32`. Vercel Cron sends it as `Authorization: Bearer …`. **If unset, `/api/cron/rates` is publicly callable.** | Yes |
+| `EXCHANGE_RATES_URL` | Leave unset. Only set it to point at a different rate provider. | No |
+
+`AUTH_URL` is deliberately **not** required — `trustHost: true` derives the URL from the
+request, so preview deployments work without per-deployment configuration.
+
+### Build
+
+`npm run build` runs `prisma generate && next build`. Prisma generation is in the build script
+rather than only in `postinstall` because Vercel restores a cached `node_modules` on most
+builds and skips `postinstall`, which would otherwise ship a stale client after a schema
+change. `prisma generate` needs neither a reachable database nor `DATABASE_URL`.
+
+### Cron
+
+[`vercel.json`](vercel.json) schedules `/api/cron/rates` daily at 06:00 UTC. Once-a-day is the
+maximum frequency on Vercel's Hobby plan; on Hobby the trigger time is approximate.
+
+### Running migrations against production
+
+Migrations are **not** applied automatically by the build. After changing the schema:
+
+```bash
+npx prisma migrate dev --name your_change   # locally: creates + applies the migration
+git push                                     # deploy the code
+DATABASE_URL="<production-url>" npx prisma migrate deploy
+```
+
+Use `migrate deploy` (never `migrate dev`) against production — it only applies existing
+migration files and never resets or generates. Deploy code that tolerates both the old and new
+schema when a change is destructive, so the gap between push and migrate is safe.
+
 ## Notes
 
-- File uploads (expense receipts, management documents) are written to `public/uploads` for
-  local development. This does not survive redeploys on most hosts — swap it for object
-  storage (S3/R2) before deploying.
+- Uploads (expense receipts, management documents) go to **Vercel Blob**. Blobs are public: the
+  URLs are unguessable but not access-controlled, which suits inline receipt images.
+- The seeded test accounts are **development credentials**. Change or remove them before real
+  use — `npm run db:seed` will recreate them.
