@@ -7,11 +7,21 @@ import {
   Users,
   Megaphone,
   Building2,
+  Calculator,
   Settings,
 } from "lucide-react";
 
 export type NavItem = {
-  titleKey: "dashboard" | "sales" | "finance" | "stock" | "employees" | "marketing" | "management" | "settings";
+  titleKey:
+    | "dashboard"
+    | "sales"
+    | "finance"
+    | "stock"
+    | "employees"
+    | "marketing"
+    | "management"
+    | "tools"
+    | "settings";
   href: string;
   icon: LucideIcon;
 };
@@ -24,5 +34,6 @@ export const navItems: NavItem[] = [
   { titleKey: "employees", href: "/employees", icon: Users },
   { titleKey: "marketing", href: "/marketing", icon: Megaphone },
   { titleKey: "management", href: "/management", icon: Building2 },
+  { titleKey: "tools", href: "/tools/calculator", icon: Calculator },
   { titleKey: "settings", href: "/settings", icon: Settings },
 ];

@@ -27,7 +27,8 @@
     "employees": "الموظفون",
     "marketing": "التسويق",
     "management": "الإدارة",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "tools": "الأدوات"
   },
   "language": {
     "label": "اللغة",
@@ -829,7 +830,92 @@
       "save": "حفظ",
       "rateUpdated": "تم تحديث سعر {code}.",
       "ownerOnly": "يمكن للمالك فقط تحديث أسعار الصرف.",
-      "rateMustBePositive": "يجب أن يكون السعر أكبر من 0"
+      "rateMustBePositive": "يجب أن يكون السعر أكبر من 0",
+      "refreshNow": "تحديث الأسعار الآن",
+      "refreshing": "جارٍ التحديث…",
+      "refreshed": "تم تحديث {count} سعر من المصدر المباشر.",
+      "refreshFailed": "تعذّر الوصول إلى مزوّد الأسعار — تم الإبقاء على الأسعار الحالية.",
+      "columnSource": "المصدر",
+      "columnLastFetched": "آخر جلب",
+      "sourceAuto": "مباشر",
+      "sourceManual": "يدوي",
+      "baseCurrency": "العملة الأساسية",
+      "never": "أبدًا",
+      "staleWarning": "بعض الأسعار المباشرة أقدم من {days} أيام. قد يكون المزوّد غير متاح — لا يزال يتم استخدام آخر أسعار معروفة.",
+      "autoToggleAria": "استخدام السعر المباشر لـ {code}",
+      "autoOn": "{code} يتبع الآن المصدر المباشر.",
+      "autoOff": "أصبح سعر {code} مضبوطًا يدويًا.",
+      "providerNote": "تأتي الأسعار المباشرة من open.er-api.com ويتم تحديثها يوميًا. لا يتم استبدال العملات اليدوية أبدًا."
+    }
+  },
+  "tools": {
+    "title": "الأدوات",
+    "subtitle": "حاسبات للتسعير والهوامش والتخطيط.",
+    "calculatorTitle": "حاسبة الأعمال",
+    "calculatorSubtitle": "لا يتم حفظ أي شيء هنا — إنها أداة للتفكير.",
+    "tabs": {
+      "margin": "هامش المنتج",
+      "breakEven": "نقطة التعادل",
+      "priceSetter": "محدّد السعر",
+      "quick": "حساب سريع"
+    },
+    "margin": {
+      "heading": "هامش المنتج",
+      "selectProduct": "المنتج",
+      "selectProductPlaceholder": "اختر منتجًا لتعبئة البيانات",
+      "price": "سعر البيع (₪)",
+      "cost": "تكلفة الوحدة (₪)",
+      "profitPerUnit": "الربح لكل وحدة",
+      "marginPercent": "الهامش",
+      "noCost": "لا توجد تكلفة مسجّلة لهذا المنتج — أدخل واحدة لعرض الهامش.",
+      "targetEarnings": "لتحقيق (₪)",
+      "sellN": "بِع {units} لتحقيق {amount}",
+      "negativeMargin": "البيع بأقل من التكلفة — كل وحدة تسبب خسارة."
+    },
+    "breakEven": {
+      "heading": "نقطة التعادل",
+      "branch": "الفرع",
+      "month": "الشهر",
+      "fixedCosts": "التكاليف الثابتة هذا الشهر",
+      "fixedCostsHint": "الإيجار والرواتب المسجّلة في المالية للشهر المحدد.",
+      "avgOrderValue": "متوسط قيمة الطلب (₪)",
+      "ordersNeeded": "الطلبات المطلوبة هذا الشهر",
+      "ordersPerDay": "الطلبات يوميًا",
+      "currentOrders": "الطلبات الفعلية حتى الآن",
+      "currentPerDay": "الفعلي يوميًا",
+      "onTrack": "متجاوز لنقطة التعادل.",
+      "behind": "أقل من نقطة التعادل بـ {gap} طلب يوميًا.",
+      "noFixedCosts": "لا توجد مصروفات إيجار أو رواتب مسجّلة لهذا الشهر.",
+      "daysInMonth": "على مدى {days} يومًا"
+    },
+    "priceSetter": {
+      "heading": "محدّد السعر",
+      "ingredients": "تكاليف المكوّنات",
+      "ingredientName": "المكوّن",
+      "ingredientCost": "التكلفة (₪)",
+      "addIngredient": "إضافة مكوّن",
+      "removeAria": "إزالة المكوّن",
+      "totalCost": "إجمالي تكلفة الوحدة",
+      "targetMargin": "الهامش المستهدف (%)",
+      "suggestedPrice": "السعر المقترح",
+      "roundPoints": "الهامش عند الأسعار التقريبية",
+      "priceColumn": "السعر",
+      "marginColumn": "الهامش",
+      "profitColumn": "الربح",
+      "marginTooHigh": "يجب أن يكون الهامش المستهدف أقل من 100%."
+    },
+    "quick": {
+      "heading": "حساب سريع",
+      "expression": "العملية",
+      "expressionPlaceholder": "مثال: 12.5 * 30 + 40",
+      "result": "النتيجة",
+      "invalidExpression": "هذه العملية غير صالحة.",
+      "conversion": "تحويل العملات",
+      "amount": "المبلغ",
+      "from": "من",
+      "to": "إلى",
+      "converted": "المبلغ المحوَّل",
+      "rateNote": "باستخدام الأسعار المخزَّنة الحالية."
     }
   }
 }

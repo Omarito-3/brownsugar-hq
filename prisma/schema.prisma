@@ -197,9 +197,14 @@ model BranchProduct {
 }
 
 model Currency {
-  code      String   @id
-  rateToIls Decimal  @db.Decimal(10, 4)
-  updatedAt DateTime @updatedAt
+  code          String    @id
+  rateToIls     Decimal   @db.Decimal(10, 4)
+  updatedAt     DateTime  @updatedAt
+  /// When false the rate is held manually (agreed supplier/shop rate) and the
+  /// scheduled fetch leaves it alone.
+  isAutoUpdated Boolean   @default(true)
+  /// Last time a live fetch actually wrote this rate.
+  lastFetchedAt DateTime?
 
   expenses             Expense[]
   salesCurrencyAmounts SalesCurrencyAmount[]

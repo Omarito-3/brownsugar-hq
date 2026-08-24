@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { FadeIn } from "@/components/motion/fade-in";
 import { CurrenciesTable } from "@/components/settings/currencies-table";
 import { getCurrenciesWithMeta } from "@/lib/queries/shared";
+import { isRateStale, STALE_RATE_DAYS } from "@/lib/exchange-rates";
 
 export default async function CurrenciesSettingsPage() {
   const session = await auth();
@@ -13,6 +14,9 @@ export default async function CurrenciesSettingsPage() {
 
   const t = await getTranslations("settings.currenciesPage");
   const currencies = await getCurrenciesWithMeta();
+  const hasStaleRates = currencies.some(
+    (c) => !c.isBase && isRateStale(c.isAutoUpdated, c.lastFetchedAt)
+  );
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -21,7 +25,11 @@ export default async function CurrenciesSettingsPage() {
         <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </FadeIn>
       <FadeIn delay={0.05}>
-        <CurrenciesTable currencies={currencies} />
+        <CurrenciesTable
+          currencies={currencies}
+          hasStaleRates={hasStaleRates}
+          staleDays={STALE_RATE_DAYS}
+        />
       </FadeIn>
     </div>
   );

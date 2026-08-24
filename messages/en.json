@@ -27,7 +27,8 @@
     "employees": "Employees",
     "marketing": "Marketing",
     "management": "Management",
-    "settings": "Settings"
+    "settings": "Settings",
+    "tools": "Tools"
   },
   "language": {
     "label": "Language",
@@ -829,7 +830,92 @@
       "save": "Save",
       "rateUpdated": "{code} rate updated.",
       "ownerOnly": "Only owners can update currency rates.",
-      "rateMustBePositive": "Rate must be greater than 0"
+      "rateMustBePositive": "Rate must be greater than 0",
+      "refreshNow": "Refresh rates now",
+      "refreshing": "Refreshing…",
+      "refreshed": "{count} rate(s) updated from the live feed.",
+      "refreshFailed": "Couldn't reach the rate provider — existing rates kept.",
+      "columnSource": "Source",
+      "columnLastFetched": "Last fetched",
+      "sourceAuto": "Live",
+      "sourceManual": "Manual",
+      "baseCurrency": "Base currency",
+      "never": "Never",
+      "staleWarning": "Some live rates are more than {days} days old. The provider may be unreachable — the last known rates are still in use.",
+      "autoToggleAria": "Use live rate for {code}",
+      "autoOn": "{code} now follows the live feed.",
+      "autoOff": "{code} rate is now held manually.",
+      "providerNote": "Live rates come from open.er-api.com, refreshed daily. Manual currencies are never overwritten."
+    }
+  },
+  "tools": {
+    "title": "Tools",
+    "subtitle": "Calculators for pricing, margins, and planning.",
+    "calculatorTitle": "Business Calculator",
+    "calculatorSubtitle": "Nothing here is saved — it's a thinking tool.",
+    "tabs": {
+      "margin": "Product margin",
+      "breakEven": "Break-even",
+      "priceSetter": "Price setter",
+      "quick": "Quick calc"
+    },
+    "margin": {
+      "heading": "Product margin",
+      "selectProduct": "Product",
+      "selectProductPlaceholder": "Pick a product to prefill",
+      "price": "Selling price (₪)",
+      "cost": "Unit cost (₪)",
+      "profitPerUnit": "Profit per unit",
+      "marginPercent": "Margin",
+      "noCost": "This product has no cost recorded — enter one to see the margin.",
+      "targetEarnings": "To earn (₪)",
+      "sellN": "Sell {units} to earn {amount}",
+      "negativeMargin": "Selling below cost — every unit loses money."
+    },
+    "breakEven": {
+      "heading": "Break-even",
+      "branch": "Branch",
+      "month": "Month",
+      "fixedCosts": "Fixed costs this month",
+      "fixedCostsHint": "Rent and salaries logged in Finance for the selected month.",
+      "avgOrderValue": "Average order value (₪)",
+      "ordersNeeded": "Orders needed this month",
+      "ordersPerDay": "Orders per day",
+      "currentOrders": "Actual orders so far",
+      "currentPerDay": "Actual per day",
+      "onTrack": "Ahead of break-even.",
+      "behind": "Behind break-even by {gap} orders/day.",
+      "noFixedCosts": "No rent or salary expenses recorded for this month.",
+      "daysInMonth": "over {days} days"
+    },
+    "priceSetter": {
+      "heading": "Price setter",
+      "ingredients": "Ingredient costs",
+      "ingredientName": "Ingredient",
+      "ingredientCost": "Cost (₪)",
+      "addIngredient": "Add ingredient",
+      "removeAria": "Remove ingredient",
+      "totalCost": "Total unit cost",
+      "targetMargin": "Target margin (%)",
+      "suggestedPrice": "Suggested price",
+      "roundPoints": "Margin at round prices",
+      "priceColumn": "Price",
+      "marginColumn": "Margin",
+      "profitColumn": "Profit",
+      "marginTooHigh": "Target margin must be under 100%."
+    },
+    "quick": {
+      "heading": "Quick calc",
+      "expression": "Expression",
+      "expressionPlaceholder": "e.g. 12.5 * 30 + 40",
+      "result": "Result",
+      "invalidExpression": "That expression isn't valid.",
+      "conversion": "Currency conversion",
+      "amount": "Amount",
+      "from": "From",
+      "to": "To",
+      "converted": "Converted",
+      "rateNote": "Using the current stored rates."
     }
   }
 }

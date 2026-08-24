@@ -30,5 +30,9 @@ export async function getCurrenciesWithMeta() {
     code: c.code,
     rateToIls: toNumber(c.rateToIls),
     updatedAt: c.updatedAt,
+    isAutoUpdated: c.isAutoUpdated,
+    lastFetchedAt: c.lastFetchedAt,
+    /// ILS is the base unit — its rate is 1 by definition and never editable.
+    isBase: c.code === "ILS",
   }));
 }
