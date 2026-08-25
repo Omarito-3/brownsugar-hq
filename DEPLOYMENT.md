@@ -25,7 +25,40 @@ To confirm which endpoint a connection string points at without exposing the cre
 node -e "console.log(new URL(process.argv[1]).host)" "<connection-string>"
 ```
 
-## The rule
+## Which Blob store is which
+
+Receipts and documents live in Vercel Blob, and the same split applies: local development and
+production must use **separate stores**. A `BLOB_READ_WRITE_TOKEN` grants both read and write,
+so a laptop pointed at the production store can upload into it and delete from it. Cleaning up
+test files locally would then delete real receipts.
+
+| Environment | Blob store | Where the token lives |
+| --- | --- | --- |
+| Local development | `brownsugar-hq-dev` | `BLOB_READ_WRITE_TOKEN` in `.env` (gitignored) |
+| Production | `brownsugar-hq-prod` | Injected by Vercel into the Production environment |
+
+### Telling them apart
+
+A Blob token is shaped `vercel_blob_rw_<STORE_ID>_<SECRET>`. The fourth underscore-separated
+segment is the store id, which is not secret and is shown in the Vercel dashboard. To check
+which store a token addresses without printing the secret:
+
+```bash
+node -e "require('dotenv').config(); console.log(process.env.BLOB_READ_WRITE_TOKEN.split('_')[3])"
+```
+
+Compare that against the store id in Vercel → Storage → the store → Settings. If your local
+`.env` prints the production store's id, replace it with the development store's token before
+uploading or deleting anything.
+
+### Never clean up blobs against production
+
+Never run a script that deletes blobs while `.env` points at the production store. In
+particular, "delete every blob not referenced by the database" is only safe when the token and
+the database belong to the *same* environment — run against a dev database with a production
+token, every production file looks unreferenced.
+
+## Migrations are never automatic
 
 **Migrations are never applied automatically.** `npm run build` runs `prisma generate`, which
 only regenerates the client — it does not touch the database. After any schema change you
@@ -147,3 +180,9 @@ local nor the Vercel one. Resolved by running `migrate deploy` against
 Two changes came out of it: this document, and a `try/catch` around the session re-check in
 `src/auth.ts`, so a future schema drift signs users out rather than erroring every route at
 once.
+
+**2026-08-25 — shared Blob store, near miss.** Local `.env` held a `BLOB_READ_WRITE_TOKEN` for
+the same store production used. A cleanup script deleted every blob not referenced by the
+*local* database, which would have destroyed production receipts had any existed — the store
+happened to hold only local test files. Resolved by splitting development and production into
+separate stores; see [Which Blob store is which](#which-blob-store-is-which).
