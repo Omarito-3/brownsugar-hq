@@ -18,16 +18,21 @@ const ALLOWED_TYPES = new Set([
 ]);
 
 /**
- * Stores uploads in Vercel Blob.
+ * Stores uploads in Vercel Blob with **private** access.
  *
- * Vercel's filesystem is ephemeral — anything written to public/ is lost on the
- * next deploy — so receipts and documents go to Blob instead. The DB keeps
- * storing a plain URL string either way, so no schema change was needed.
+ * Vercel's filesystem is ephemeral, so receipts and documents can't live in
+ * public/. They go to Blob instead, and because the store is private the blob
+ * URL is not directly fetchable — reads are proxied through /api/files, which
+ * checks the session and the caller's role against the record that owns the
+ * file. That's stricter than a public store, where anyone holding the URL could
+ * read it.
  *
- * Blobs are public: the URL is unguessable (Blob appends a random suffix) but
- * anyone holding it can read the file. That matches how these are used —
- * receipt images shown inline in the app — but it does mean the URLs should be
- * treated as secrets-by-obscurity rather than access-controlled documents.
+ * The uploader's id is part of the pathname so a just-uploaded file (not yet
+ * attached to an expense or document) can still be previewed by the person who
+ * uploaded it, and only by them. See the serving route for that rule.
+ *
+ * The DB stores the /api/files/... path, so the schema is unchanged — these
+ * fields always held a URL string.
  */
 async function storeUpload(formData: FormData, folder: string): Promise<UploadResult> {
   const session = await auth();
@@ -50,16 +55,17 @@ async function storeUpload(formData: FormData, folder: string): Promise<UploadRe
   }
 
   const ext = path.extname(file.name).toLowerCase();
-  const key = `${folder}/${randomUUID()}${ext}`;
+  const pathname = `${folder}/${session.user.id}/${randomUUID()}${ext}`;
 
   try {
-    const blob = await put(key, file, {
-      access: "public",
+    await put(pathname, file, {
+      access: "private",
       contentType: file.type,
-      // The key is already unique; without this Blob would add a second suffix.
+      // The pathname is already unique; without this Blob adds a second suffix,
+      // which would break the exact-match lookup done by the serving route.
       addRandomSuffix: false,
     });
-    return { ok: true, url: blob.url };
+    return { ok: true, url: `/api/files/${pathname}` };
   } catch (err) {
     console.error("[upload] blob put failed:", err);
     return { ok: false, error: "Upload failed. Please try again." };
