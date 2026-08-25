@@ -41,8 +41,15 @@ Open [http://localhost:3000](http://localhost:3000).
 > the accounts.
 
 `npm run db:seed` creates three accounts, one per role. They share a password, which the seed
-prints when it finishes and which is defined at the top of
-[`prisma/seed.ts`](prisma/seed.ts).
+prints when it finishes. Set `SEED_PASSWORD` to choose it:
+
+```bash
+SEED_PASSWORD="your-dev-password" npm run db:seed
+```
+
+With `SEED_PASSWORD` unset a random one is generated and printed **once** — only the hash is
+stored, so if you don't copy it from the output you'll need to seed again. No password is
+hardcoded in the repository.
 
 | Role | Email | Branch |
 | --- | --- | --- |

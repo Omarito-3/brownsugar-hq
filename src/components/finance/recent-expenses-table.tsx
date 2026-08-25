@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Receipt } from "lucide-react";
+import { FileText, ImageIcon, Receipt } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+
+import { FileLink, isPreviewableImage } from "@/components/shared/file-link";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ export type RecentExpense = {
   amountOriginal: number;
   currencyCode: string;
   amountIls: number;
+  receiptUrl: string | null;
 };
 
 const CATEGORY_KEYS = ["RENT", "SUPPLIES", "SALARY", "MARKETING", "EQUIPMENT", "OTHER"] as const;
@@ -39,6 +42,7 @@ export function RecentExpensesTable({
   isOwner: boolean;
 }) {
   const t = useTranslations("finance");
+  const tCommon = useTranslations("common");
   const locale = useLocale();
 
   function categoryLabel(category: string): string {
@@ -72,6 +76,7 @@ export function RecentExpensesTable({
                     <TableHead>{t("columnCategory")}</TableHead>
                     <TableHead className="text-end">{t("columnAmount")}</TableHead>
                     <TableHead className="text-end">{t("columnIlsValue")}</TableHead>
+                    <TableHead className="text-center">{t("columnReceipt")}</TableHead>
                     <TableHead className="w-0" />
                   </TableRow>
                 </TableHeader>
@@ -90,6 +95,28 @@ export function RecentExpensesTable({
                       </TableCell>
                       <TableCell className="text-end tabular-nums">
                         {formatIls(expense.amountIls)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {expense.receiptUrl ? (
+                          <FileLink
+                            url={expense.receiptUrl}
+                            label={t("viewReceiptAria", {
+                              context: `${expense.branchName} · ${formatDate(expense.date, locale)}`,
+                            })}
+                            // Padding rather than a bare inline link: the text
+                            // alone is a ~20px tap target, too small on touch.
+                            className="min-h-10 px-2 py-2 text-primary hover:underline"
+                          >
+                            {isPreviewableImage(expense.receiptUrl) ? (
+                              <ImageIcon className="size-4" />
+                            ) : (
+                              <FileText className="size-4" />
+                            )}
+                            <span className="text-sm font-medium">{t("viewReceipt")}</span>
+                          </FileLink>
+                        ) : (
+                          <span className="text-muted-foreground">{tCommon("dash")}</span>
+                        )}
                       </TableCell>
                       <TableCell className="p-1">
                         <ExpenseRowActions

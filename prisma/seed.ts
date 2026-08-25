@@ -1,10 +1,16 @@
 import "dotenv/config";
+import { randomBytes } from "node:crypto";
 import { PrismaClient, ProductCategory } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
+
+/** 24 random base64url characters — ~144 bits, well past any brute-force concern. */
+function randomPassword(): string {
+  return randomBytes(18).toString("base64url");
+}
 
 async function main() {
   const branchSeeds = [
@@ -34,8 +40,14 @@ async function main() {
     });
   }
 
-  // Shared dev password for all seeded accounts — local/testing only.
-  const seedPassword = "BrownSugar123!";
+  // Shared password for all seeded accounts — local development only.
+  //
+  // Read from SEED_PASSWORD so nothing is hardcoded in the repository. With no
+  // value set, a random one is generated and printed once at the end: the hash
+  // is all that reaches the database, so a generated password that isn't copied
+  // from the output is unrecoverable and the run has to be repeated.
+  const generatedPassword = !process.env.SEED_PASSWORD;
+  const seedPassword = process.env.SEED_PASSWORD || randomPassword();
   const passwordHash = await bcrypt.hash(seedPassword, 10);
 
   // MANAGER and STAFF share a branch on purpose: that makes it possible to see
@@ -107,10 +119,16 @@ async function main() {
   }
 
   console.log("Seed complete.");
-  console.log(`All seeded accounts use the password: ${seedPassword}`);
   for (const u of userSeeds) {
     const scope = u.branchId ? scopedBranch.name : "all branches";
     console.log(`  ${u.role.padEnd(7)} -> ${u.email}  (${scope})`);
+  }
+  console.log(`\nPassword for all seeded accounts: ${seedPassword}`);
+  if (generatedPassword) {
+    console.log(
+      "This was generated randomly and is shown only now — copy it, or set\n" +
+        "SEED_PASSWORD in your environment and run the seed again to choose your own."
+    );
   }
 }
 

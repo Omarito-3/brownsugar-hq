@@ -2,9 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Loader2 } from "lucide-react";
+import { ExternalLink, FileText, ImageIcon, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocale, useTranslations } from "next-intl";
+
+import { FileLink, isPreviewableImage } from "@/components/shared/file-link";
 
 import { documentCategoryValues } from "@/lib/validations/management";
 import { deleteDocument } from "@/lib/actions/documents";
@@ -193,14 +195,18 @@ export function DocumentsSection({
                 {filtered.map((doc) => (
                   <TableRow key={doc.id}>
                     <TableCell className="font-medium">
-                      <a
-                        href={doc.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:underline"
+                      <FileLink
+                        url={doc.fileUrl}
+                        label={t("viewFileAria", { title: doc.title })}
+                        className="min-h-10 py-2 text-primary hover:underline"
                       >
+                        {isPreviewableImage(doc.fileUrl) ? (
+                          <ImageIcon className="size-4 shrink-0" />
+                        ) : (
+                          <FileText className="size-4 shrink-0" />
+                        )}
                         {doc.title}
-                      </a>
+                      </FileLink>
                     </TableCell>
                     <TableCell>{documentCategoryLabel(tRoot, doc.category)}</TableCell>
                     <TableCell className="text-muted-foreground">
@@ -217,7 +223,17 @@ export function DocumentsSection({
                       </div>
                     </TableCell>
                     <TableCell className="p-1 text-end">
-                      <DocumentRowActions document={doc} />
+                      <div className="flex items-center justify-end gap-0.5">
+                        <Button asChild variant="ghost" size="icon-sm">
+                          <FileLink
+                            url={doc.fileUrl}
+                            label={t("viewFileAria", { title: doc.title })}
+                          >
+                            <ExternalLink className="size-4" />
+                          </FileLink>
+                        </Button>
+                        <DocumentRowActions document={doc} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
