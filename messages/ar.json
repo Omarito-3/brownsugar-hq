@@ -846,7 +846,11 @@
       "autoOn": "{code} يتبع الآن المصدر المباشر.",
       "autoOff": "أصبح سعر {code} مضبوطًا يدويًا.",
       "providerNote": "تأتي الأسعار المباشرة من open.er-api.com ويتم تحديثها يوميًا. لا يتم استبدال العملات اليدوية أبدًا."
-    }
+    },
+    "account": "حسابي",
+    "accountDesc": "تغيير الاسم وكلمة المرور.",
+    "users": "المستخدمون",
+    "usersDesc": "إنشاء الحسابات وتحديد الأدوار والفروع وإلغاء تفعيل الوصول."
   },
   "tools": {
     "title": "الأدوات",
@@ -916,6 +920,88 @@
       "to": "إلى",
       "converted": "المبلغ المحوَّل",
       "rateNote": "باستخدام الأسعار المخزَّنة الحالية."
+    }
+  },
+  "account": {
+    "title": "حسابي",
+    "subtitle": "تغيير الاسم وكلمة المرور.",
+    "profileHeading": "الملف الشخصي",
+    "email": "البريد الإلكتروني",
+    "emailHint": "يمكن للمالك فقط تغيير بريدك الإلكتروني.",
+    "role": "الدور",
+    "branch": "الفرع",
+    "allBranches": "جميع الفروع",
+    "name": "الاسم",
+    "saveProfile": "حفظ التغييرات",
+    "profileSaved": "تم تحديث الملف الشخصي.",
+    "passwordHeading": "كلمة المرور",
+    "currentPassword": "كلمة المرور الحالية",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordHint": "{min} أحرف على الأقل.",
+    "savePassword": "تغيير كلمة المرور",
+    "passwordSaved": "تم تغيير كلمة المرور.",
+    "validation": {
+      "nameRequired": "الاسم مطلوب",
+      "currentPasswordRequired": "أدخل كلمة المرور الحالية",
+      "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+      "confirmRequired": "أكّد كلمة المرور الجديدة",
+      "passwordsDoNotMatch": "كلمتا المرور غير متطابقتين",
+      "passwordUnchanged": "يجب أن تختلف كلمة المرور الجديدة عن الحالية"
+    },
+    "actions": {
+      "currentPasswordWrong": "كلمة المرور الحالية غير صحيحة."
+    }
+  },
+  "users": {
+    "title": "المستخدمون",
+    "subtitle": "إنشاء الحسابات وتحديد الأدوار والفروع وإلغاء تفعيل الوصول.",
+    "addUser": "إضافة مستخدم",
+    "addUserTitle": "إضافة مستخدم",
+    "editUserTitle": "تعديل المستخدم",
+    "resetPasswordTitle": "إعادة تعيين كلمة المرور",
+    "noUsers": "لا يوجد مستخدمون بعد.",
+    "columnName": "الاسم",
+    "columnEmail": "البريد الإلكتروني",
+    "columnRole": "الدور",
+    "columnBranch": "الفرع",
+    "columnActive": "نشط",
+    "columnActions": "الإجراءات",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "newPassword": "كلمة المرور الجديدة",
+    "role": "الدور",
+    "selectRole": "اختر دورًا",
+    "branch": "الفرع",
+    "selectBranch": "اختر فرعًا",
+    "branchOwnerHint": "المالك لديه صلاحية الوصول إلى جميع الفروع.",
+    "passwordHint": "{min} أحرف على الأقل.",
+    "save": "حفظ",
+    "create": "إنشاء مستخدم",
+    "resetPassword": "إعادة تعيين كلمة المرور",
+    "editAria": "تعديل {name}",
+    "resetAria": "إعادة تعيين كلمة المرور لـ {name}",
+    "activeAria": "الحساب نشط لـ {name}",
+    "youBadge": "أنت",
+    "created": "تم إنشاء المستخدم.",
+    "updated": "تم تحديث المستخدم.",
+    "passwordReset": "تمت إعادة تعيين كلمة المرور لـ {name}.",
+    "activated": "يمكن لـ {name} تسجيل الدخول مجددًا.",
+    "deactivated": "لم يعد بإمكان {name} تسجيل الدخول.",
+    "validation": {
+      "nameRequired": "الاسم مطلوب",
+      "invalidEmail": "أدخل بريدًا إلكترونيًا صحيحًا",
+      "passwordTooShort": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل"
+    },
+    "actions": {
+      "ownerOnly": "يمكن للمالك فقط إدارة المستخدمين.",
+      "userNotFound": "المستخدم غير موجود.",
+      "emailTaken": "هذا البريد الإلكتروني مستخدم بالفعل.",
+      "branchRequiredForRole": "يجب تعيين المديرين والموظفين إلى فرع.",
+      "cannotDemoteSelf": "لا يمكنك إزالة دور المالك من حسابك.",
+      "cannotDeactivateSelf": "لا يمكنك إلغاء تفعيل حسابك الخاص.",
+      "lastOwner": "هذا آخر مالك نشط — إلغاء تفعيله سيمنع الجميع من الدخول."
     }
   }
 }

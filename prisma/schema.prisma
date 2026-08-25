@@ -156,6 +156,10 @@ model User {
   passwordHash String
   role         Role     @default(STAFF)
   branchId     String?
+  /// Deactivated accounts cannot sign in, and any live session is invalidated
+  /// on its next request. Accounts are deactivated rather than deleted because
+  /// they are referenced by sales, expenses, and stock history.
+  isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
 
   branch            Branch?         @relation(fields: [branchId], references: [id])

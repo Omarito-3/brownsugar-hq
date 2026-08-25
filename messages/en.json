@@ -846,7 +846,11 @@
       "autoOn": "{code} now follows the live feed.",
       "autoOff": "{code} rate is now held manually.",
       "providerNote": "Live rates come from open.er-api.com, refreshed daily. Manual currencies are never overwritten."
-    }
+    },
+    "account": "My Account",
+    "accountDesc": "Change your name and password.",
+    "users": "Users",
+    "usersDesc": "Create accounts, set roles and branches, and deactivate access."
   },
   "tools": {
     "title": "Tools",
@@ -916,6 +920,88 @@
       "to": "To",
       "converted": "Converted",
       "rateNote": "Using the current stored rates."
+    }
+  },
+  "account": {
+    "title": "My Account",
+    "subtitle": "Change your name and password.",
+    "profileHeading": "Profile",
+    "email": "Email",
+    "emailHint": "Only an owner can change your email address.",
+    "role": "Role",
+    "branch": "Branch",
+    "allBranches": "All branches",
+    "name": "Name",
+    "saveProfile": "Save changes",
+    "profileSaved": "Profile updated.",
+    "passwordHeading": "Password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordHint": "At least {min} characters.",
+    "savePassword": "Change password",
+    "passwordSaved": "Password changed.",
+    "validation": {
+      "nameRequired": "Name is required",
+      "currentPasswordRequired": "Enter your current password",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "confirmRequired": "Confirm your new password",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordUnchanged": "New password must be different from the current one"
+    },
+    "actions": {
+      "currentPasswordWrong": "Your current password is incorrect."
+    }
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Create accounts, set roles and branches, and deactivate access.",
+    "addUser": "Add user",
+    "addUserTitle": "Add User",
+    "editUserTitle": "Edit User",
+    "resetPasswordTitle": "Reset Password",
+    "noUsers": "No users yet.",
+    "columnName": "Name",
+    "columnEmail": "Email",
+    "columnRole": "Role",
+    "columnBranch": "Branch",
+    "columnActive": "Active",
+    "columnActions": "Actions",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "role": "Role",
+    "selectRole": "Select a role",
+    "branch": "Branch",
+    "selectBranch": "Select a branch",
+    "branchOwnerHint": "Owners have access to every branch.",
+    "passwordHint": "At least {min} characters.",
+    "save": "Save",
+    "create": "Create user",
+    "resetPassword": "Reset password",
+    "editAria": "Edit {name}",
+    "resetAria": "Reset password for {name}",
+    "activeAria": "Account active for {name}",
+    "youBadge": "You",
+    "created": "User created.",
+    "updated": "User updated.",
+    "passwordReset": "Password reset for {name}.",
+    "activated": "{name} can sign in again.",
+    "deactivated": "{name} can no longer sign in.",
+    "validation": {
+      "nameRequired": "Name is required",
+      "invalidEmail": "Enter a valid email address",
+      "passwordTooShort": "Password must be at least 8 characters"
+    },
+    "actions": {
+      "ownerOnly": "Only owners can manage users.",
+      "userNotFound": "User not found.",
+      "emailTaken": "That email address is already in use.",
+      "branchRequiredForRole": "Managers and staff must be assigned to a branch.",
+      "cannotDemoteSelf": "You can't remove your own owner role.",
+      "cannotDeactivateSelf": "You can't deactivate your own account.",
+      "lastOwner": "This is the last active owner — deactivating it would lock everyone out."
     }
   }
 }
