@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
+import type { Role } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 import authConfig from "@/auth.config";
@@ -32,10 +33,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const userId = token.id as string | undefined;
       if (!userId) return null;
 
-      const current = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { isActive: true, role: true, branchId: true },
-      });
+      // A failed lookup signs the user out rather than throwing. This callback
+      // runs on every request that reads the session, so an unhandled error
+      // here surfaces on every page and server action at once — a database
+      // blip or a schema drift between code and database takes the whole site
+      // down instead of returning people to /login. Failing closed also keeps
+      // deactivation enforced: a lookup we cannot complete does not grant access.
+      let current: { isActive: boolean; role: Role; branchId: string | null } | null;
+      try {
+        current = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { isActive: true, role: true, branchId: true },
+        });
+      } catch (error) {
+        console.error("[auth] session re-check failed:", error);
+        return null;
+      }
 
       if (!current?.isActive) return null;
 
