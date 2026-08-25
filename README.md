@@ -3,6 +3,8 @@
 Internal operations hub for the Brown Sugar branches — sales, finance, stock, employees,
 management, and marketing, in English and Arabic (with full RTL support).
 
+Deploying or changing the schema? Read [DEPLOYMENT.md](DEPLOYMENT.md) first.
+
 ## Stack
 
 - **Next.js 16** (App Router, Server Components, Server Actions) + **React 19**
@@ -33,16 +35,20 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Test accounts
 
-`npm run db:seed` creates three accounts, one per role, so role scoping can be checked by
-logging in as each. All three share the same password:
+> **Local development only.** These accounts exist so role scoping can be checked by logging
+> in as each role. They must never exist in a deployed environment. If you have already run
+> the seed against a live database, change the passwords through `/settings/users` or delete
+> the accounts.
 
-| Role | Email | Password | Branch |
-| --- | --- | --- | --- |
-| Owner | `owner@brownsugar.hq` | `BrownSugar123!` | All branches |
-| Manager | `manager@brownsugar.hq` | `BrownSugar123!` | Batn al-Hawa |
-| Staff | `staff@brownsugar.hq` | `BrownSugar123!` | Batn al-Hawa |
+`npm run db:seed` creates three accounts, one per role. They share a password, which the seed
+prints when it finishes and which is defined at the top of
+[`prisma/seed.ts`](prisma/seed.ts).
 
-> These are development seed credentials only — never deploy them to a live environment.
+| Role | Email | Branch |
+| --- | --- | --- |
+| Owner | `owner@brownsugar.hq` | All branches |
+| Manager | `manager@brownsugar.hq` | Batn al-Hawa |
+| Staff | `staff@brownsugar.hq` | Batn al-Hawa |
 
 The manager and staff accounts share a branch on purpose: that makes it possible to view the
 same branch's data under two different roles and see only the permissions differ.
@@ -113,21 +119,18 @@ maximum frequency on Vercel's Hobby plan; on Hobby the trigger time is approxima
 
 ### Running migrations against production
 
-Migrations are **not** applied automatically by the build. After changing the schema:
+Migrations are **not** applied automatically by the build. After any schema change you must run
+`prisma migrate deploy` against the database Vercel connects to — which is a different Neon
+branch from your local one.
 
-```bash
-npx prisma migrate dev --name your_change   # locally: creates + applies the migration
-git push                                     # deploy the code
-DATABASE_URL="<production-url>" npx prisma migrate deploy
-```
-
-Use `migrate deploy` (never `migrate dev`) against production — it only applies existing
-migration files and never resets or generates. Deploy code that tolerates both the old and new
-schema when a change is destructive, so the gap between push and migrate is safe.
+**See [DEPLOYMENT.md](DEPLOYMENT.md) for the endpoints, the exact commands, and why this
+matters.** Getting it wrong has already caused a production outage.
 
 ## Notes
 
-- Uploads (expense receipts, management documents) go to **Vercel Blob**. Blobs are public: the
-  URLs are unguessable but not access-controlled, which suits inline receipt images.
-- The seeded test accounts are **development credentials**. Change or remove them before real
-  use — `npm run db:seed` will recreate them.
+- Uploads (expense receipts, management documents) go to a **private Vercel Blob** store and are
+  served through [`/api/files/[...path]`](src/app/api/files/%5B...path%5D/route.ts), which
+  authenticates the request and authorizes it against the record that owns the file. Blob URLs
+  are never exposed directly.
+- The seeded test accounts are **local development credentials**. Never run `npm run db:seed`
+  against a deployed database.
