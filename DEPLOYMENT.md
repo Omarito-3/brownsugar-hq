@@ -27,15 +27,21 @@ node -e "console.log(new URL(process.argv[1]).host)" "<connection-string>"
 
 ## Which Blob store is which
 
-Receipts and documents live in Vercel Blob, and the same split applies: local development and
-production must use **separate stores**. A `BLOB_READ_WRITE_TOKEN` grants both read and write,
-so a laptop pointed at the production store can upload into it and delete from it. Cleaning up
-test files locally would then delete real receipts.
+Receipts and documents live in Vercel Blob, and the same split applies as for the database:
+development and production use **separate stores**.
 
-| Environment | Blob store | Where the token lives |
+| Environment | Blob store id | Where the token lives |
 | --- | --- | --- |
-| Local development | `brownsugar-hq-dev` | `BLOB_READ_WRITE_TOKEN` in `.env` (gitignored) |
-| Production | `brownsugar-hq-prod` | Injected by Vercel into the Production environment |
+| Local development | `Va3HwYe9wpF77JNn` | `BLOB_READ_WRITE_TOKEN` in `.env` (gitignored) |
+| Production | a separate store, connected to the Production environment only | Injected by Vercel at build and run time |
+
+The two stores are separate, so **local uploads cannot reach production storage**. Uploading a
+receipt while running the app locally writes to the development store; the deployed site writes
+to the production one. Neither can see or delete the other's files.
+
+That separation is the point, not an inconvenience: a `BLOB_READ_WRITE_TOKEN` grants delete as
+well as write, so a laptop holding the production token could destroy real receipts. Scoping the
+local token to the development store removes that possibility outright.
 
 ### Telling them apart
 
