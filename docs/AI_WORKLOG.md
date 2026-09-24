@@ -105,3 +105,22 @@ purchase expenses) is not started.
 Recommended next action: Owner reviews the Finance SALARY-aggregate question. Next scoped task:
 STAFF write restrictions + OWNER-only stock items/suppliers (D-016 items 1–3 and 5), with tests.
 Separately, upgrade Next.js to fix the critical advisory.
+
+## 2026-09-24: Claude Code (Opus 5.5): Next.js 16.3.6 security upgrade
+Task: Upgrade `next` and `eslint-config-next` 16.3.2 → 16.3.6 to fix the critical advisories
+GHSA-p293-qw3h-jr36 and GHSA-2xp9-vwfh-vxw4. No `npm audit fix --force`.
+Files changed: `package.json`, `package-lock.json`, `docs/CURRENT_STATE.md`, `docs/AI_WORKLOG.md`.
+What changed: Both packages are exact-pinned to 16.3.6. Lockfile changes cover only
+`next`/`@next/*` and Next's `sharp` bump. No application code changed. The bundled Next docs have
+no 16.3.x breaking-change notes. The `AGENTS.md` managed block is still current.
+Tests/checks performed: `npm test` 56/56, `npx tsc --noEmit`, `npm run lint`, `npm run build` all
+pass (no build warnings). `npm audit`: 1 critical + 7 high → 0 critical + 6 high (next and sharp
+fixed).
+Remaining issues: 6 high advisories remain, all transitive (fast-uri, js-yaml, deepmerge-ts,
+mysql2, @prisma/config, prisma). Details and fix paths are in CURRENT_STATE. Not verified in a
+browser or on a Vercel deployment. Production needs a redeploy (push to `master`) to pick up
+the fix.
+Recommended next action: Push `master` so Vercel redeploys with 16.3.6. Optionally run the
+non-breaking `npm audit fix` for fast-uri/js-yaml as its own small task. Then continue with D-016
+items 1–3 and 5 (staff write restrictions, OWNER-only stock catalog).
+

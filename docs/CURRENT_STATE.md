@@ -271,4 +271,34 @@ Implements D-016 items 4 and 9 (see D-017 and D-018). This is the commit after t
 - Not checked in a browser: logging in needs credentials. Server-side behaviour is covered by
   `tests/` (56 tests).
 - `npm audit` reports advisories in existing dependencies, including a **critical** one for
-  `next@16.3.2` (fixed in 16.3.6). Not addressed here.
+  `next@16.3.2` (fixed in 16.3.6). Not addressed here. *Resolved later on 2026-09-24: see "Update
+  2026-09-24: Next.js 16.3.6 security upgrade".*
+
+## Update 2026-09-24: Next.js 16.3.6 security upgrade (Claude)
+
+- `next` and `eslint-config-next` went from 16.3.2 to **16.3.6** (exact pins, kept in sync). The
+  lockfile changes are limited to `next`/`@next/*` and Next's `sharp` image dependency
+  (0.35.3 → 0.35.4, libvips 1.3.2 → 1.3.3), plus a few small transitive shifts.
+- This fixes GHSA-p293-qw3h-jr36 (unauthenticated RCE on Windows-hosted servers) and
+  GHSA-2xp9-vwfh-vxw4 (RCE in the Image Optimization API with AVIF). The `sharp` high-severity
+  advisory also went away with the bump.
+- The bundled docs (`node_modules/next/dist/docs/`) only have major-version upgrade guides and
+  no 16.3.x patch notes, so no breaking changes apply. The `AGENTS.md` managed block is still
+  current for 16.3.6 (checked with `hasCurrentAgentRules`).
+- Checks: `npm test` 56/56, `npx tsc --noEmit`, `npm run lint` and `npm run build` all pass,
+  with no build warnings. Not checked in a browser or on Vercel.
+
+**`npm audit` after the upgrade: 6 high, 0 critical** (it was 1 critical + 7 high). None are
+fixed here because they are outside this task:
+
+| Package | Severity | Comes in via | Fix available |
+| --- | --- | --- | --- |
+| `fast-uri` ≤3.1.5 (SSRF / host confusion) | high | `@hookform/resolvers` → `ajv` (runtime dep) | `npm audit fix` (non-breaking) |
+| `js-yaml` 4.0.0–4.3.1 (CPU DoS) | high | `eslint` → `@eslint/eslintrc` (dev only) | `npm audit fix` (non-breaking) |
+| `deepmerge-ts` <8 (stack exhaustion) | high | `prisma` → `@prisma/config` (CLI/dev tooling) | only by downgrading to prisma 6 (breaking, **do not**) |
+| `mysql2` ≤3.23.0 | high | `prisma` CLI (unused MySQL driver; the app uses Postgres) | only by downgrading to prisma 6 (breaking, **do not**) |
+| `@prisma/config`, `prisma` | high | carry the two above | same |
+
+Suggested follow-up: a separate small task to run the non-breaking `npm audit fix` for
+`fast-uri`/`js-yaml`, and watch for a Prisma 7.x release that updates `deepmerge-ts`/`mysql2`.
+
