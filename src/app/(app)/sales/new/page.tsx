@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getBranchProductsMap } from "@/lib/queries/sales";
@@ -15,7 +17,10 @@ export default async function NewSalesEntryPage() {
 
   const t = await getTranslations("sales");
   const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [branches, branchProductsMap, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),

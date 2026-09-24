@@ -4,6 +4,8 @@ import { CalendarDays } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { canViewSalaries, getBranchScope } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
 import { EmployeeMetricCards } from "@/components/employees/metric-cards";
@@ -24,12 +26,19 @@ export default async function EmployeesPage() {
 
   const t = await getTranslations("employees");
   const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
+
+  // Salary figures are OWNER-only and are filtered out in the queries, not just hidden here.
+  const showSalary = canViewSalaries(session.user.role);
+  const salaryVisibility = { includeSalary: showSalary };
 
   const [metrics, branchCosts, employees, branches] = await Promise.all([
-    getEmployeeMetrics(scopedBranchId),
-    getEmployeeCostByBranch(scopedBranchId),
-    getEmployeesTable(scopedBranchId),
+    getEmployeeMetrics(scopedBranchId, salaryVisibility),
+    getEmployeeCostByBranch(scopedBranchId, salaryVisibility),
+    getEmployeesTable(scopedBranchId, salaryVisibility),
     getBranchesForUser(scopedBranchId),
   ]);
 
@@ -51,19 +60,20 @@ export default async function EmployeesPage() {
         </div>
       </FadeIn>
 
-      <EmployeeMetricCards metrics={metrics} showSalary={isOwner} />
+      <EmployeeMetricCards metrics={metrics} showSalary={showSalary} />
 
       <div className="space-y-3">
         <FadeIn delay={0.05}>
           <h2 className="text-lg font-medium">{t("branchCosts")}</h2>
         </FadeIn>
-        <BranchEmployeeCards data={branchCosts} showSalary={isOwner} />
+        <BranchEmployeeCards data={branchCosts} showSalary={showSalary} />
       </div>
 
       <EmployeesTable
         employees={employees}
         branches={branches}
         isOwner={isOwner}
+        showSalary={showSalary}
         canManage
         defaultBranchId={scopedBranchId ?? ""}
       />

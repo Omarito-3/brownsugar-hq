@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { FadeIn } from "@/components/motion/fade-in";
 import { TaskBoard } from "@/components/management/task-board";
 import { MyTasksList } from "@/components/management/my-tasks-list";
@@ -16,7 +18,10 @@ export default async function ManagementPage() {
   const t = await getTranslations("management");
   const isOwner = session.user.role === "OWNER";
   const isStaff = session.user.role === "STAFF";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   if (isStaff) {
     const myTasks = await getMyTasks(session.user.id);

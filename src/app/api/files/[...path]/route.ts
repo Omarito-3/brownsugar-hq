@@ -50,7 +50,8 @@ export async function GET(
     allowed = role === "OWNER" || expense.branchId === userBranchId;
   } else if (document) {
     if (role === "OWNER") allowed = true;
-    else if (role === "MANAGER") {
+    // A MANAGER without a branch fails closed, including for org-wide documents.
+    else if (role === "MANAGER" && userBranchId) {
       allowed = document.branchId === null || document.branchId === userBranchId;
     } else allowed = false;
   } else {

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { FadeIn } from "@/components/motion/fade-in";
 import { CampaignsList } from "@/components/marketing/campaigns-list";
 import { ExperimentsTable } from "@/components/marketing/experiments-table";
@@ -16,7 +18,10 @@ export default async function MarketingPage() {
 
   const t = await getTranslations("marketing");
   const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [campaigns, experiments, feedback, branches] = await Promise.all([
     getCampaignsWithImpact(scopedBranchId),

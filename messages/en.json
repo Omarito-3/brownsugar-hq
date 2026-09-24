@@ -57,6 +57,10 @@
       "management": "Branches, users, and permissions."
     }
   },
+  "noBranch": {
+    "title": "No branch assigned",
+    "description": "Your account isn't linked to a branch yet, so there is nothing to show here. Ask the owner to assign you to a branch."
+  },
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "A daily overview across all branches.",

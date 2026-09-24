@@ -53,7 +53,7 @@ Guiding principles from the owner:
 | i18n | next-intl 4, cookie-based locale (`NEXT_LOCALE`), no URL prefix | `messages/en.json`, `messages/ar.json` |
 | Files | Vercel Blob (**private** store), proxied through `/api/files/...` | |
 | Hosting | Vercel, with a daily Vercel Cron job (`vercel.json`) | |
-| Tooling | ESLint 9 (next config + prettier), Prettier with the tailwind plugin, TypeScript 5 strict, tsx for scripts | **No test framework and no tests** |
+| Tooling | ESLint 9 (next config + prettier), Prettier with the tailwind plugin, TypeScript 5 strict, tsx for scripts | Vitest 4 (`npm test`, tests in `tests/`), added 2026-09-24. See D-017 |
 
 ## 3. Directory map
 
@@ -165,13 +165,17 @@ guards.
 
 Roles are fixed in the `Role` enum. Nothing is configurable per user.
 
-**Branch scoping pattern:** used on every page:
+**Branch scoping pattern:** used on every branch-scoped page (since 2026-09-24):
 
 ```ts
-const isOwner = session.user.role === "OWNER";
-const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
-// queries treat `undefined` as "all branches"
+// src/lib/permissions.ts
+const scope = getBranchScope(session.user); // "all" | "branch" | "none"
+if (scope.kind === "none") return <NoBranchAssigned />; // MANAGER/STAFF without a branch: fail closed
+const scopedBranchId = scope.branchId;       // undefined only for OWNER ("all branches")
 ```
+
+Queries still read `undefined` as "all branches". So never pass a raw, possibly-null
+`session.user.branchId` to them. Always go through `getBranchScope`.
 
 Server actions do their own checks. They don't rely on the UI hiding buttons.
 
@@ -193,7 +197,7 @@ The matrix below is verified from the server actions and page redirects:
 | Stock request: create | any | for own branch location | for own branch location |
 | Stock request: approve/reject/fulfil | any | only if **fulfilling** location is their branch | ✗ |
 | Per-location minimums | any | own | **own (allowed)** |
-| Employees page | all + salaries | own branch (salary UI hidden*) | redirected to read-only schedule |
+| Employees page | all + salaries | own branch, **no salary data*** | redirected to read-only schedule |
 | Employees: create/edit/deactivate/delete | ✓ | own branch | ✗ |
 | Schedule edit | ✓ | own branch | ✗ |
 | Generate monthly salary expenses | ✓ | ✗ | ✗ |
@@ -203,7 +207,9 @@ The matrix below is verified from the server actions and page redirects:
 | Settings: account (own name/password) | ✓ | ✓ | ✓ |
 | Settings: users, currencies | ✓ | ✗ | ✗ |
 
-\* See CURRENT_STATE.md: salary values still reach the manager's browser through the edit dialog.
+\* Since 2026-09-24, salary figures (individual and aggregate) are left out in the employee queries
+when `canViewSalaries(role)` is false. Only an OWNER can write `salaryIls`: a MANAGER's submitted
+salary is ignored, and employees they create start at 0 until the owner sets it.
 
 File access (`/api/files/...`): receipts go to the OWNER or anyone whose branch matches the
 expense. Documents go to the OWNER, or to a MANAGER for their own branch or org-wide documents.
@@ -298,6 +304,7 @@ return 404.
 npm run dev            # dev server
 npx tsc --noEmit       # type check (no npm script for it)
 npm run lint           # eslint
+npm test               # vitest (regression tests in tests/)
 npm run build          # prisma generate + next build
 npm run db:migrate     # prisma migrate dev (LOCAL ONLY)
 npm run db:seed        # LOCAL ONLY. Never against production

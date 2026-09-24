@@ -4,6 +4,8 @@ import { Plus, Boxes, Truck, Warehouse, ClipboardList } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
 import { LowStockAlerts } from "@/components/stock/low-stock-alerts";
@@ -31,7 +33,10 @@ export default async function StockPage({
   const { location: locationParam } = await searchParams;
   const t = await getTranslations("stock");
   const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const locations = await getStockLocations(scopedBranchId);
   const selectedLocation = locations.some((l) => l.id === locationParam) ? locationParam : undefined;

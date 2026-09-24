@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -24,7 +26,10 @@ export default async function SalesPage() {
 
   const t = await getTranslations("sales");
   const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [metrics, { series, branches }, branchRevenue, recentEntries] = await Promise.all([
     getWeeklyMetrics(scopedBranchId),

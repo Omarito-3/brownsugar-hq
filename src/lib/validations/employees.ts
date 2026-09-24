@@ -19,7 +19,10 @@ export function employeeSchema(t: TFunc) {
     phone: z.string().max(50).optional().or(z.literal("")),
     branchId: z.string().min(1, t("validation.branchRequired")),
     position: z.enum(positionValues),
-    salaryIls: z.coerce.number().positive(t("validation.salaryPositive")),
+    // Optional because only an OWNER may set it (D-016): the manager form omits the
+    // field, and the server ignores it from non-owners. OWNERs must still supply it —
+    // enforced in the server action.
+    salaryIls: z.coerce.number().positive(t("validation.salaryPositive")).optional(),
     startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, t("validation.invalidDate")),
     notes: z.string().max(1000).optional().or(z.literal("")),
   });

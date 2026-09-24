@@ -52,6 +52,7 @@ export function EmployeeFormDialog({
   employeeId,
   branches,
   isOwner,
+  showSalary,
   defaultBranchId,
   defaultValues,
   trigger,
@@ -60,6 +61,8 @@ export function EmployeeFormDialog({
   employeeId?: string;
   branches: BranchOption[];
   isOwner: boolean;
+  /** When false the salary field is not rendered and no salary is submitted. */
+  showSalary: boolean;
   defaultBranchId: string;
   defaultValues?: EmployeeFormInput;
   trigger: React.ReactNode;
@@ -76,7 +79,7 @@ export function EmployeeFormDialog({
     phone: "",
     branchId: isOwner ? "" : defaultBranchId,
     position: "BARISTA",
-    salaryIls: "" as unknown as number,
+    ...(showSalary ? { salaryIls: "" as unknown as number } : {}),
     startDate: todayDateKey(),
     notes: "",
   };
@@ -205,27 +208,29 @@ export function EmployeeFormDialog({
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="salaryIls"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("form.salary")}</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        {...field}
-                        value={field.value as number | string}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {showSalary && (
+                <FormField
+                  control={form.control}
+                  name="salaryIls"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("form.salary")}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value as number | string}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="startDate"

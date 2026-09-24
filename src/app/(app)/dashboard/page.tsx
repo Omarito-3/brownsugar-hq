@@ -3,6 +3,8 @@ import { Receipt, TrendingUp, Wallet } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FadeIn } from "@/components/motion/fade-in";
 import { MetricCard } from "@/components/shared/metric-card";
@@ -25,9 +27,11 @@ export default async function DashboardPage() {
   if (!session?.user) redirect("/login");
 
   const t = await getTranslations("dashboard");
-  const isOwner = session.user.role === "OWNER";
   const isStaff = session.user.role === "STAFF";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [
     weeklyMetrics,

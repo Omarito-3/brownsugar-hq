@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { employeeSchema, type EmployeeInput } from "@/lib/validations/employees";
+import { canViewSalaries } from "@/lib/permissions";
 
 export type EmployeeActionResult = { ok: true; id: string } | { ok: false; error: string };
 export type SimpleActionResult = { ok: true } | { ok: false; error: string };
@@ -44,13 +45,20 @@ export async function createEmployee(input: EmployeeInput): Promise<EmployeeActi
   const access = await requireAccess(parsed.data.branchId);
   if (!access.ok) return access;
 
+  // Salary is OWNER-only (D-016). A non-owner's submitted salary is ignored and the
+  // record starts at 0 for the owner to fill in; an OWNER must provide one.
+  const ownerSetsSalary = canViewSalaries(access.session.user.role);
+  if (ownerSetsSalary && parsed.data.salaryIls == null) {
+    return { ok: false, error: tv("validation.salaryPositive") };
+  }
+
   const employee = await prisma.employee.create({
     data: {
       name: parsed.data.name,
       phone: parsed.data.phone || null,
       branchId: parsed.data.branchId,
       position: parsed.data.position,
-      salaryIls: parsed.data.salaryIls,
+      salaryIls: ownerSetsSalary ? parsed.data.salaryIls! : 0,
       startDate: toDate(parsed.data.startDate),
       notes: parsed.data.notes || null,
     },
@@ -86,6 +94,13 @@ export async function updateEmployee(id: string, input: EmployeeInput): Promise<
   const targetAccess = await requireAccess(parsed.data.branchId);
   if (!targetAccess.ok) return targetAccess;
 
+  // Salary is OWNER-only (D-016): a non-owner's update never touches it, whatever
+  // the request contains. An OWNER must provide one.
+  const ownerSetsSalary = canViewSalaries(access.session.user.role);
+  if (ownerSetsSalary && parsed.data.salaryIls == null) {
+    return { ok: false, error: tv("validation.salaryPositive") };
+  }
+
   await prisma.employee.update({
     where: { id },
     data: {
@@ -93,7 +108,7 @@ export async function updateEmployee(id: string, input: EmployeeInput): Promise<
       phone: parsed.data.phone || null,
       branchId: parsed.data.branchId,
       position: parsed.data.position,
-      salaryIls: parsed.data.salaryIls,
+      ...(ownerSetsSalary ? { salaryIls: parsed.data.salaryIls } : {}),
       startDate: toDate(parsed.data.startDate),
       notes: parsed.data.notes || null,
     },

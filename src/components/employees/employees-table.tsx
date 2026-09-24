@@ -50,10 +50,12 @@ function EmployeeRowActions({
   employee,
   branches,
   isOwner,
+  showSalary,
 }: {
   employee: EmployeeRow;
   branches: BranchOption[];
   isOwner: boolean;
+  showSalary: boolean;
 }) {
   const t = useTranslations("employees");
   const tCommon = useTranslations("common");
@@ -95,13 +97,14 @@ function EmployeeRowActions({
         employeeId={employee.id}
         branches={branches}
         isOwner={isOwner}
+        showSalary={showSalary}
         defaultBranchId={employee.branchId}
         defaultValues={{
           name: employee.name,
           phone: employee.phone ?? "",
           branchId: employee.branchId,
           position: employee.position as (typeof positionValues)[number],
-          salaryIls: employee.salaryIls,
+          ...(showSalary && employee.salaryIls != null ? { salaryIls: employee.salaryIls } : {}),
           startDate: employee.startDate,
           notes: employee.notes ?? "",
         }}
@@ -154,12 +157,14 @@ export function EmployeesTable({
   employees,
   branches,
   isOwner,
+  showSalary,
   canManage,
   defaultBranchId,
 }: {
   employees: EmployeeRow[];
   branches: BranchOption[];
   isOwner: boolean;
+  showSalary: boolean;
   canManage: boolean;
   defaultBranchId: string;
 }) {
@@ -215,6 +220,7 @@ export function EmployeesTable({
               mode="create"
               branches={branches}
               isOwner={isOwner}
+              showSalary={showSalary}
               defaultBranchId={defaultBranchId}
               trigger={
                 <Button size="sm">
@@ -237,7 +243,7 @@ export function EmployeesTable({
                   <TableHead>{t("columnName")}</TableHead>
                   <TableHead>{t("columnBranch")}</TableHead>
                   <TableHead>{t("columnPosition")}</TableHead>
-                  {isOwner && <TableHead className="text-end">{t("columnSalary")}</TableHead>}
+                  {showSalary && <TableHead className="text-end">{t("columnSalary")}</TableHead>}
                   <TableHead>{t("columnStartDate")}</TableHead>
                   {canManage && <TableHead className="text-end">{t("columnActions")}</TableHead>}
                 </TableRow>
@@ -248,7 +254,7 @@ export function EmployeesTable({
                     <TableCell className="font-medium">{employee.name}</TableCell>
                     <TableCell className="text-muted-foreground">{employee.branchName}</TableCell>
                     <TableCell>{positionLabel(tRoot, employee.position)}</TableCell>
-                    {isOwner && (
+                    {showSalary && (
                       <TableCell className="text-end tabular-nums">
                         {formatIls(employee.salaryIls)}
                       </TableCell>
@@ -258,7 +264,12 @@ export function EmployeesTable({
                     </TableCell>
                     {canManage && (
                       <TableCell className="p-1">
-                        <EmployeeRowActions employee={employee} branches={branches} isOwner={isOwner} />
+                        <EmployeeRowActions
+                          employee={employee}
+                          branches={branches}
+                          isOwner={isOwner}
+                          showSalary={showSalary}
+                        />
                       </TableCell>
                     )}
                   </TableRow>

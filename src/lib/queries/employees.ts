@@ -8,18 +8,36 @@ function monthStart(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
+/**
+ * Salary visibility is decided by the caller (see `canViewSalaries`) and passed
+ * in explicitly. With `includeSalary: false` salary figures are never read from
+ * the database, so they cannot reach the client even by accident.
+ */
+export type SalaryVisibility = { includeSalary: boolean };
+
 export type EmployeeMetrics = {
   activeCount: number;
-  totalSalaryIls: number;
+  /** null when the caller may not see salaries. */
+  totalSalaryIls: number | null;
   laborCostPercent: number | null;
 };
 
-export async function getEmployeeMetrics(branchId?: string): Promise<EmployeeMetrics> {
+export async function getEmployeeMetrics(
+  branchId: string | undefined,
+  { includeSalary }: SalaryVisibility
+): Promise<EmployeeMetrics> {
+  const where = { isActive: true, ...(branchId ? { branchId } : {}) };
+
+  if (!includeSalary) {
+    const activeCount = await prisma.employee.count({ where });
+    return { activeCount, totalSalaryIls: null, laborCostPercent: null };
+  }
+
   const start = monthStart();
 
   const [activeAgg, salesAgg] = await Promise.all([
     prisma.employee.aggregate({
-      where: { isActive: true, ...(branchId ? { branchId } : {}) },
+      where,
       _count: { _all: true },
       _sum: { salaryIls: true },
     }),
@@ -39,7 +57,10 @@ export async function getEmployeeMetrics(branchId?: string): Promise<EmployeeMet
   };
 }
 
-export async function getEmployeeCostByBranch(branchId?: string) {
+export async function getEmployeeCostByBranch(
+  branchId: string | undefined,
+  { includeSalary }: SalaryVisibility
+) {
   const branches = await (branchId
     ? prisma.branch.findMany({ where: { id: branchId }, select: { id: true, name: true } })
     : prisma.branch.findMany({
@@ -52,19 +73,23 @@ export async function getEmployeeCostByBranch(branchId?: string) {
     by: ["branchId"],
     where: { isActive: true, ...(branchId ? { branchId } : {}) },
     _count: { _all: true },
-    _sum: { salaryIls: true },
+    ...(includeSalary ? { _sum: { salaryIls: true } } : {}),
   });
 
   const byBranch = new Map(
-    rows.map((r) => [r.branchId, { count: r._count._all, salary: toNumber(r._sum.salaryIls) }])
+    rows.map((r) => [
+      r.branchId,
+      { count: r._count._all, salary: includeSalary ? toNumber(r._sum?.salaryIls) : null },
+    ])
   );
 
   return branches.map((b) => {
-    const stats = byBranch.get(b.id) ?? { count: 0, salary: 0 };
+    const stats = byBranch.get(b.id) ?? { count: 0, salary: includeSalary ? 0 : null };
     return {
       branchId: b.id,
       branchName: b.name,
       employeeCount: stats.count,
+      /** null when the caller may not see salaries. */
       salaryCostIls: stats.salary,
     };
   });
@@ -77,15 +102,20 @@ export type EmployeeRow = {
   branchId: string;
   branchName: string;
   position: string;
-  salaryIls: number;
+  /** null when the caller may not see salaries. */
+  salaryIls: number | null;
   startDate: string;
   isActive: boolean;
   notes: string | null;
 };
 
-export async function getEmployeesTable(branchId?: string): Promise<EmployeeRow[]> {
+export async function getEmployeesTable(
+  branchId: string | undefined,
+  { includeSalary }: SalaryVisibility
+): Promise<EmployeeRow[]> {
   const employees = await prisma.employee.findMany({
     where: branchId ? { branchId } : {},
+    omit: { salaryIls: !includeSalary },
     include: { branch: { select: { name: true } } },
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
   });
@@ -97,15 +127,15 @@ export async function getEmployeesTable(branchId?: string): Promise<EmployeeRow[
     branchId: e.branchId,
     branchName: e.branch.name,
     position: e.position as string,
-    salaryIls: toNumber(e.salaryIls),
+    salaryIls: includeSalary ? toNumber(e.salaryIls) : null,
     startDate: toDateKey(e.startDate),
     isActive: e.isActive,
     notes: e.notes,
   }));
 }
 
-export async function getEmployeeForEdit(id: string) {
-  const e = await prisma.employee.findUnique({ where: { id } });
+export async function getEmployeeForEdit(id: string, { includeSalary }: SalaryVisibility) {
+  const e = await prisma.employee.findUnique({ where: { id }, omit: { salaryIls: !includeSalary } });
   if (!e) return null;
 
   return {
@@ -114,7 +144,7 @@ export async function getEmployeeForEdit(id: string) {
     phone: e.phone ?? "",
     branchId: e.branchId,
     position: e.position,
-    salaryIls: toNumber(e.salaryIls),
+    salaryIls: includeSalary ? toNumber(e.salaryIls) : null,
     startDate: toDateKey(e.startDate),
     notes: e.notes ?? "",
   };

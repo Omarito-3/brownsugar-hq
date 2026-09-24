@@ -35,7 +35,7 @@ The "Known risks" list below records the code as it was reviewed.
 | --- | --- |
 | `npx tsc --noEmit` | ✅ passes, no errors |
 | `npm run lint` | ✅ passes, no warnings |
-| Automated tests | ❌ none exist (no test runner configured) |
+| Automated tests | ❌ none existed at `9c953cb`. Vitest added 2026-09-24 (`npm test`), see update below |
 | i18n key parity en/ar | ✅ 855 / 855, no missing keys |
 | Working tree | clean on `master` |
 
@@ -97,21 +97,22 @@ deployment prep, account management, private file serving and the owner-recovery
   *Verified*
 - **Audit trail** for edits and deletes (who changed a sales entry or expense, and when): none.
   Only `enteredById` / `createdAt` on creation. *Verified*
-- **Tests**: none.
+- **Tests**: only the regression tests for salary confidentiality and branch scoping (added
+  2026-09-24). No coverage yet for money, stock or other modules.
 
 ## Known risks (found in review, not fixed)
 
-Ordered by severity. **Nothing below has been changed.** Each needs an owner decision or a
-scoped task.
+Ordered by severity. Found at `9c953cb`. Unless an item is marked **FIXED**, it has not been
+changed and needs an owner decision or a scoped task.
 
 ### High
 
-1. **Managers can see and change individual salaries.** The UI hides salary columns for
+1. **FIXED 2026-09-24** (see update at the end). **Managers can see and change individual salaries.** The UI hides salary columns for
    managers, but `employees-table.tsx` passes each employee's `salaryIls` into the edit dialog
    props, and `employee-form-dialog.tsx` renders an editable salary field for everyone.
    `updateEmployee` / `createEmployee` accept `salaryIls` from managers. This contradicts the
    README ("Salary amounts are hidden" for managers). *Verified (code)*
-2. **Branch scoping fails open for a non-owner with no branch.** Every page computes
+2. **FIXED 2026-09-24** (see update at the end). **Branch scoping fails open for a non-owner with no branch.** Every page computes
    `scopedBranchId = isOwner ? undefined : (branchId ?? undefined)`, and queries treat
    `undefined` as "all branches". A MANAGER/STAFF with `branchId = null` would see every
    branch's sales, finance and stock. The user actions and seed prevent creating such a user,
@@ -171,7 +172,8 @@ scoped task.
 
 ## Documentation vs code inconsistencies
 
-- README "Manager: salary amounts are hidden". **False in practice** (risk 1).
+- README "Manager: salary amounts are hidden". It was false at `9c953cb` (risk 1). It is true since
+  the 2026-09-24 fix.
 - README "Staff: read-mostly". Staff can write sales, expenses and stock movements (risk 5).
 - README Scripts table has no type-check command, and there is no `typecheck` npm script. Use
   `npx tsc --noEmit`.
@@ -187,9 +189,10 @@ scoped task.
 
 These are suggestions only. The owner decides.
 
-1. Decide intended STAFF and MANAGER permissions (salary visibility, staff write access), then
-   fix the salary leak.
-2. Make branch scoping fail closed for non-owners without a branch.
+1. ~~Decide STAFF/MANAGER permissions~~ (done: D-016). ~~Fix the salary leak~~ (done 2026-09-24).
+2. ~~Make branch scoping fail closed for non-owners without a branch~~ (done 2026-09-24).
+2a. Remove STAFF write access to expenses, stock movements and minimums, and make stock
+    items/suppliers OWNER-only (D-016, not yet implemented).
 3. Make stock quantity updates atomic (DB-side increment/conditional update or row lock).
 4. Introduce the business timezone (`Asia/Hebron`, per D-016) for "today" and period boundaries.
 5. Ensure every branch has a BRANCH stock location (seed + a branch-creation path).
@@ -229,3 +232,43 @@ The initial findings above were independently checked at `9c953cb`. During revie
 `npm run lint` and `node node_modules/typescript/bin/tsc --noEmit --incremental false` both exited 0 without diagnostics. Parsed catalogs have 855 matching leaf keys each. Reviewed the 217-file initial tracked inventory, nine migrations, action/query/validation modules, routes, configuration and feature/UI structure. Generated dependencies/build output were not treated as authored application code. No automated test suite was available. Build, clean-install, live integration and browser tests were not run; no seed, migration, backfill, recovery, Blob write, rate refresh, deployment, commit or push was performed.
 
 Recommended next task remains a bounded authorization pass: agree the role/branch matrix, then address salary data, null-branch fail-closed behavior, request/campaign scope and attachment binding with regression tests. Follow with request/payroll idempotency and financial atomicity. Resolve historical-rate edit behavior, warehouse cost allocation, business timezone/week boundaries and partial fulfilment as explicit business decisions rather than silently changing them.
+
+
+## Update 2026-09-24: salary confidentiality and fail-closed branch scoping (Claude)
+
+Implements D-016 items 4 and 9 (see D-017 and D-018). This is the commit after the docs commit
+`4c588a2`.
+
+**Salary (risk 1): fixed. Verified by tests.**
+- `src/lib/permissions.ts` `canViewSalaries(role)`: only OWNER.
+- `src/lib/queries/employees.ts`: every function that reads salary now takes
+  `{ includeSalary }`. With `false`, `salaryIls` is left out of the Prisma query (`omit`, no
+  `_sum`), and results carry `null`. Covers `getEmployeesTable`, `getEmployeeMetrics` (salary
+  total and labor-cost %), `getEmployeeCostByBranch`, and the currently unused
+  `getEmployeeForEdit`.
+- `src/lib/actions/employees.ts`: only an OWNER writes `salaryIls`. A MANAGER update never
+  touches it. A MANAGER create stores 0 whatever is submitted. An OWNER must still provide a
+  salary.
+- The UI hides the salary column, the salary field in the add/edit dialog, and salary metrics
+  when salary may not be shown.
+
+**Branch scoping (risk 2): fixed. Verified by tests.**
+- `getBranchScope(user)` returns `all` / `branch` / `none`. All 15 branch-scoped pages render
+  `<NoBranchAssigned />` for `none`, before any query runs. The edit pages check before loading
+  the record. STAFF on `/employees` and `/marketing` are still redirected first, as before.
+- `/api/files`: a MANAGER without a branch can no longer open org-wide documents.
+- Server actions were re-checked. They already failed closed for a null branch (strict
+  equality against a non-null branch id, or an explicit `!branchId` check), so they were not
+  changed.
+
+**Still open / not covered by this change**
+- MANAGERs still see **branch-level SALARY expenses** in Finance (the lump sums from salary
+  generation), and the break-even tool includes them in fixed costs. These are aggregates,
+  not individual salaries. For a branch with a single employee, though, the aggregate equals
+  that person's salary. Needs an owner decision.
+- An employee created by a MANAGER has salary 0 until the OWNER edits it. Nothing flags these
+  records yet, and monthly salary generation counts them as 0.
+- Not checked in a browser: logging in needs credentials. Server-side behaviour is covered by
+  `tests/` (56 tests).
+- `npm audit` reports advisories in existing dependencies, including a **critical** one for
+  `next@16.3.2` (fixed in 16.3.6). Not addressed here.

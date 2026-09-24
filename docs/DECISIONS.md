@@ -183,3 +183,36 @@ Affected files/modules: auth/permission checks in `src/lib/actions/*`, page load
 `src/app/(app)/**`, `src/lib/queries/*`, the employees UI, stock items/suppliers, date handling
 (future), and the stock purchase → finance flow (future).
 Implementation status: to be delivered in scoped tasks. See `docs/AI_WORKLOG.md`.
+
+## D-017: Vitest for automated tests
+Date: 2026-09-24
+Decision: Add Vitest (`^4.1.11`, dev dependency) with `npm test` = `vitest run`. Tests live in
+`tests/`, not in `src/app`, so they can never become routes. `vitest.config.mts` maps `@/` to
+`src/` and swaps `server-only` for a no-op stub. Tests mock `@/auth`, `@/lib/prisma` (a
+call-recording proxy in `tests/helpers/prisma-mock.ts`), `next-intl/server` and `next/cache`. They
+call server actions, queries and page server components directly. No database is used.
+Reason: The repo had no tests, and the permission fixes need regression coverage.
+Alternatives considered: Node's built-in test runner (module mocking is still experimental);
+Vitest 3.x (affected by advisory GHSA-82fw-gwwq-j7x9); Vitest 5.x (requires `@types/node` >= 22,
+which conflicts with the project's `^20`).
+Affected files/modules: `package.json`, `package-lock.json`, `vitest.config.mts`, `tests/**`
+
+## D-018: How salary confidentiality and fail-closed branch scoping are enforced
+Date: 2026-09-24
+Decision:
+- `src/lib/permissions.ts` is the single home for `getBranchScope()` and `canViewSalaries()`.
+- Branch-scoped pages call `getBranchScope`. A `none` scope renders `<NoBranchAssigned />` before any
+  query. Query helpers still read `undefined` as "all branches" (unchanged, to avoid a broad
+  refactor), so callers must never pass a raw nullable `branchId`.
+- Salary is removed in the queries (`includeSalary: false` means it is not selected and is returned
+  as `null`), not only hidden in the UI. Only an OWNER writes `salaryIls`. An employee created by a
+  MANAGER gets `salaryIls = 0` (the column is non-nullable) until the OWNER sets it.
+Reason: D-016 items 4 and 9. Enforcing at the data source means a new UI path can't leak salaries
+by accident.
+Alternatives considered: making every query fail closed on `undefined` (touches every query
+module; deferred); making `salaryIls` nullable (schema migration; deferred); blocking MANAGERs from
+creating employees (not requested by the owner).
+Affected files/modules: `src/lib/permissions.ts`, `src/components/layout/no-branch-assigned.tsx`, 15
+pages under `src/app/(app)`, `src/app/api/files/[...path]/route.ts`, `src/lib/queries/employees.ts`,
+`src/lib/actions/employees.ts`, `src/lib/validations/employees.ts`, the employees table/form
+components, `messages/{en,ar}.json`

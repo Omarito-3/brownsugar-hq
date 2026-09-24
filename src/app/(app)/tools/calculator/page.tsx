@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { FadeIn } from "@/components/motion/fade-in";
 import { CalculatorTabs } from "@/components/tools/calculator-tabs";
 import { getProductsForCalculator } from "@/lib/queries/tools";
@@ -12,8 +14,10 @@ export default async function CalculatorPage() {
   if (!session?.user) redirect("/login");
 
   const t = await getTranslations("tools");
-  const isOwner = session.user.role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [products, branches, currencies] = await Promise.all([
     getProductsForCalculator(),

@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ScheduleGrid } from "@/components/employees/schedule/schedule-grid";
@@ -27,7 +29,10 @@ export default async function SchedulePage({
   const tEmployees = await getTranslations("employees");
   const isOwner = session.user.role === "OWNER";
   const canManage = isOwner || session.user.role === "MANAGER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const anchorKey = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? week : toDateKey(new Date());
 

@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { SalesEntryForm } from "@/components/sales/sales-entry-form";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getBranchProductsMap, getSalesEntryForEdit } from "@/lib/queries/sales";
@@ -18,6 +20,11 @@ export default async function EditSalesEntryPage({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
+
   const entry = await getSalesEntryForEdit(id);
   if (!entry) notFound();
 
@@ -25,8 +32,6 @@ export default async function EditSalesEntryPage({
   const isOwner = session.user.role === "OWNER";
   const canEdit = isOwner || entry.branchId === session.user.branchId;
   if (!canEdit) redirect("/sales");
-
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
   const [branches, branchProductsMap, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),

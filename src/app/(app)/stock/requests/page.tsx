@@ -4,6 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { FadeIn } from "@/components/motion/fade-in";
 import { RequestsList } from "@/components/stock/requests-list";
 import { RequestFormDialog } from "@/components/stock/request-form-dialog";
@@ -21,8 +23,10 @@ export default async function StockRequestsPage() {
 
   const t = await getTranslations("stock");
   const { role } = session.user;
-  const isOwner = role === "OWNER";
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
 
   const [requests, locations, warehouses, items, approverLocationIds] = await Promise.all([
     getStockRequests(scopedBranchId),

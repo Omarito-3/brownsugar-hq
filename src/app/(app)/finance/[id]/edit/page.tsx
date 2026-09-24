@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 
 import { auth } from "@/auth";
+import { NoBranchAssigned } from "@/components/layout/no-branch-assigned";
+import { getBranchScope } from "@/lib/permissions";
 import { ExpenseForm } from "@/components/finance/expense-form";
 import { FadeIn } from "@/components/motion/fade-in";
 import { getBranchesForUser, getCurrencies } from "@/lib/queries/shared";
@@ -18,6 +20,11 @@ export default async function EditExpensePage({
   const session = await auth();
   if (!session?.user) redirect("/login");
 
+  // Fails closed: a MANAGER/STAFF with no branch gets no branch-scoped data.
+  const scope = getBranchScope(session.user);
+  if (scope.kind === "none") return <NoBranchAssigned />;
+  const scopedBranchId = scope.branchId;
+
   const expense = await getExpenseForEdit(id);
   if (!expense) notFound();
 
@@ -25,8 +32,6 @@ export default async function EditExpensePage({
   const isOwner = session.user.role === "OWNER";
   const canEdit = isOwner || expense.branchId === session.user.branchId;
   if (!canEdit) redirect("/finance");
-
-  const scopedBranchId = isOwner ? undefined : (session.user.branchId ?? undefined);
 
   const [branches, currencies] = await Promise.all([
     getBranchesForUser(scopedBranchId),
